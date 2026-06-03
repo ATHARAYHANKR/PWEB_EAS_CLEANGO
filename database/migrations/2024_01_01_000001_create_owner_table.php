@@ -1,0 +1,20 @@
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::create('owner', function (Blueprint $table) {
+            $table->id('id_owner');
+            $table->string('nama_owner', 100);
+            $table->string('username', 50)->unique();
+            $table->string('notelp_owner', 20);
+            $table->string('sandi_owner', 255);
+            $table->text('alamat_owner')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+    public function down(): void { Schema::dropIfExists('owner'); }
+};
