@@ -411,18 +411,21 @@ function pilihKatalog(idKatalog, idLayanan) {
       <button type="submit" data-confirm-title="Simpan Perubahan" data-confirm-message="Pastikan data sudah benar sebelum menyimpan perubahan." class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-700 text-white font-semibold rounded-xl text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
         <i class="fas fa-save mr-2"></i>Simpan Perubahan
       </button>
-      <form method="POST" action="{{ route('customer.booking.delete', $editOrder->id_order) }}" style="display:inline;">
-        @csrf
-        @method('DELETE')
-        <button type="submit" data-confirm-title="Hapus Booking" data-confirm-message="Anda yakin ingin menghapus booking ini? Tindakan ini tidak bisa dibatalkan." class="px-5 py-3 bg-red-500 text-white font-semibold rounded-xl text-sm hover:bg-red-600 transition">
-          <i class="fas fa-trash mr-1"></i>Hapus
-        </button>
-      </form>
       <a href="{{ route('customer.riwayat') }}" class="px-5 py-3 bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-300 transition">
         <i class="fas fa-times mr-1"></i>Batal
       </a>
     </div>
   </form>
+
+  <div class="flex gap-3 pt-4">
+    <form method="POST" action="{{ route('customer.booking.delete', $editOrder->id_order) }}" class="w-full">
+      @csrf
+      @method('DELETE')
+      <button type="submit" data-confirm-title="Hapus Booking" data-confirm-message="Anda yakin ingin menghapus booking ini? Tindakan ini tidak bisa dibatalkan." class="w-full px-5 py-3 bg-red-500 text-white font-semibold rounded-xl text-sm hover:bg-red-600 transition">
+        <i class="fas fa-trash mr-1"></i>Hapus Booking
+      </button>
+    </form>
+  </div>
 </div>
 
 @push('scripts')
