@@ -405,9 +405,11 @@ SESSION_SECURE_COOKIE=true
 - Kirim Tagihan ke Customer
 - Update Status Laundry
 - Konfirmasi Pembayaran
+- Update Profil Pribadi (nama, telepon, alamat, password)
 
 ✅ **Customer Dashboard**
 - Booking/Pesan Layanan
+- **Edit & Hapus Booking** (sebelum dikonfirmasi)
 - Upload Foto Barang
 - Pilih Jenis Layanan & Katalog
 - Lihat Status Order Realtime
