@@ -125,8 +125,7 @@ $menu = [
         <form method="POST" action="{{ route('owner.order.batalkan') }}">
           @csrf
           <input type="hidden" name="id_order" value="{{ $selOrder->id_order }}">
-          <button type="submit" onclick="return confirm('Batalkan order ini?')"
-            class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-semibold transition">
+          <button type="submit" data-confirm-title="Batalkan Order" data-confirm-message="Batalkan order ini?" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-semibold transition">
             ❌ Batalkan
           </button>
         </form>
@@ -251,7 +250,7 @@ $menu = [
           </button>
           <form method="POST" action="{{ route('owner.katalog.delete', $k->id_katalog) }}" class="inline">
             @csrf @method('DELETE')
-            <button onclick="return confirm('Hapus katalog ini?')" class="text-xs text-red-400 hover:text-red-600 transition px-1" title="Hapus">
+            <button type="submit" data-confirm-title="Hapus Katalog" data-confirm-message="Apakah Anda yakin ingin menghapus katalog ini?" class="text-xs text-red-400 hover:text-red-600 transition px-1" title="Hapus">
               <i class="fas fa-trash"></i>
             </button>
           </form>
@@ -461,10 +460,12 @@ document.getElementById('editModal').addEventListener('click', function(e) {
         <div class="text-xs text-slate-400">{{ $l->deskripsi }}</div>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ $l->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $l->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+        <span class="inline-flex items-center h-7 px-2 rounded-full text-[10px] font-semibold {{ $l->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $l->is_active ? 'Aktif' : 'Nonaktif' }}</span>
         <form method="POST" action="{{ route('owner.layanan.delete', $l->id_layanan) }}">
           @csrf @method('DELETE')
-          <button onclick="return confirm('Hapus layanan ini?')" class="text-xs text-red-400 hover:text-red-600 transition"><i class="fas fa-trash"></i></button>
+          <button type="submit" data-confirm-title="Hapus Layanan" data-confirm-message="Untuk menghapus layanan ini, hapus dahulu semua katalog yang terkait dengan layanan tersebut." class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 text-red-400 hover:text-red-600 hover:border-red-200 transition" title="Hapus layanan">
+            <i class="fas fa-trash"></i>
+          </button>
         </form>
       </div>
     </div>
@@ -492,15 +493,28 @@ document.getElementById('editModal').addEventListener('click', function(e) {
   <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
     <div class="px-5 py-4 border-b border-slate-100"><span class="font-semibold">Daftar Staff ({{ $staffList->count() }})</span></div>
     @forelse($staffList as $s)
-    <div class="px-5 py-4 border-b border-slate-50 flex items-center gap-4 hover:bg-slate-50 transition">
-      <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700 text-lg">
-        {{ mb_strtoupper(mb_substr($s->nama,0,1)) }}
+    <div class="px-5 py-4 border-b border-slate-50 hover:bg-slate-50 transition">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700 text-lg">
+          {{ mb_strtoupper(mb_substr($s->nama,0,1)) }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-slate-800">{{ $s->nama }}</div>
+          <div class="text-xs text-slate-400 truncate">{{ $s->username }} • {{ $s->notelp }}</div>
+        </div>
+        <span class="inline-flex items-center h-7 px-2 rounded-full text-[10px] font-semibold {{ $s->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $s->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+        <div class="flex items-center gap-1">
+          <a href="{{ route('owner.staff.edit', $s->id_staff) }}" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 text-blue-500 hover:text-blue-700 hover:border-blue-200 transition" title="Edit staff">
+            <i class="fas fa-edit"></i>
+          </a>
+          <form method="POST" action="{{ route('owner.staff.delete', $s->id_staff) }}" class="inline">
+            @csrf @method('DELETE')
+            <button type="submit" data-confirm-title="Hapus Staff" data-confirm-message="Apakah Anda yakin ingin menghapus staff ini?" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 text-red-500 hover:text-red-700 hover:border-red-200 transition" title="Hapus staff">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
       </div>
-      <div class="flex-1">
-        <div class="font-semibold text-slate-800">{{ $s->nama }}</div>
-        <div class="text-xs text-slate-400">{{ $s->username }} • {{ $s->notelp }}</div>
-      </div>
-      <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ $s->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $s->is_active ? 'Aktif' : 'Nonaktif' }}</span>
     </div>
     @empty
     <div class="py-12 text-center text-slate-400">Belum ada staff</div>
@@ -520,6 +534,50 @@ document.getElementById('editModal').addEventListener('click', function(e) {
       <button type="submit" class="w-full py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">
         <i class="fas fa-user-plus mr-2"></i>Tambah Staff
       </button>
+    </form>
+  </div>
+</div>
+
+{{-- ═══ STAFF EDIT ═══ --}}
+@elseif($page === 'staff_edit')
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-slate-800">Ubah Staff</h3>
+        <p class="text-sm text-slate-500">Perbarui data staff dan password jika diperlukan.</p>
+      </div>
+      <a href="{{ route('owner.staff') }}" class="text-xs text-violet-600 hover:underline">Kembali ke daftar</a>
+    </div>
+
+    <form method="POST" action="{{ route('owner.staff.update', $staff->id_staff) }}" class="space-y-4">
+      @csrf @method('PUT')
+      @foreach([['nama','Nama Lengkap','text'],['username','Username','text'],['notelp','No. Telepon','tel'],['alamat','Alamat','text']] as [$n,$l,$t])
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $l }}</label>
+        <input type="{{ $t }}" name="{{ $n }}" value="{{ old($n, $staff->{$n}) }}" placeholder="{{ $l }}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+      </div>
+      @endforeach
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Password Baru (opsional)</label>
+        <input type="password" name="sandi" placeholder="Kosongkan jika tidak ingin mengubah" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
+        <select name="is_active" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+          <option value="1" {{ $staff->is_active ? 'selected' : '' }}>Aktif</option>
+          <option value="0" {{ !$staff->is_active ? 'selected' : '' }}>Nonaktif</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button type="submit" class="w-full sm:w-auto px-5 py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">
+          <i class="fas fa-save mr-2"></i>Update Staff
+        </button>
+        <a href="{{ route('owner.staff') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">Batal</a>
+      </div>
     </form>
   </div>
 </div>

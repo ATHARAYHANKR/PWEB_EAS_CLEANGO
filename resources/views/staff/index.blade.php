@@ -62,7 +62,7 @@ $menu = [
     <form method="POST" action="{{ route('staff.ambil_order') }}" class="inline">
       @csrf
       <input type="hidden" name="id_order" value="{{ $o->id_order }}">
-      <button type="submit" class="text-xs bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-emerald-600 transition">Ambil Order</button>
+      <button type="submit" data-confirm-title="Ambil Order" data-confirm-message="Apakah Anda yakin ingin mengambil order ini?" class="text-xs bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-emerald-600 transition">Ambil Order</button>
     </form>
   </div>
   @endforeach
@@ -82,7 +82,7 @@ $menu = [
     <form method="POST" action="{{ route('staff.konfirmasi_bayar.do') }}" class="inline">
       @csrf
       <input type="hidden" name="id_bayar" value="{{ $p->id_bayar }}">
-      <button type="submit" class="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-600 transition">Konfirmasi</button>
+      <button type="submit" data-confirm-title="Konfirmasi Pembayaran" data-confirm-message="Konfirmasi pembayaran order ini sebagai lunas?" class="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-600 transition">Konfirmasi</button>
     </form>
   </div>
   @endforeach
@@ -111,7 +111,7 @@ $menu = [
       <form method="POST" action="{{ route('staff.ambil_order') }}">
         @csrf
         <input type="hidden" name="id_order" value="{{ $o->id_order }}">
-        <button type="submit" class="text-xs bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-600 transition">
+        <button type="submit" data-confirm-title="Ambil Order" data-confirm-message="Apakah Anda yakin ingin mengambil order ini?" class="text-xs bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-600 transition">
           <i class="fas fa-car mr-1"></i>Ambil Order
         </button>
       </form>
@@ -251,7 +251,7 @@ $menu = [
         @csrf
         <input type="hidden" name="id_order" value="{{ $selOrder->id_order }}">
         <input type="hidden" name="new_status" value="{{ $nextStatusMap[$selOrder->status_order] }}">
-        <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold rounded-xl text-sm hover:opacity-90 transition">
+        <button type="submit" data-confirm-title="Update Status Laundry" data-confirm-message="Ubah status order ini menjadi {{ $nextStatusMap[$selOrder->status_order] }}?" class="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold rounded-xl text-sm hover:opacity-90 transition">
           <i class="fas fa-arrow-right mr-2"></i>Lanjut ke: <strong>{{ $nextStatusMap[$selOrder->status_order] }}</strong>
         </button>
       </form>
@@ -282,7 +282,7 @@ $menu = [
     <form method="POST" action="{{ route('staff.konfirmasi_bayar.do') }}">
       @csrf
       <input type="hidden" name="id_bayar" value="{{ $p->id_bayar }}">
-      <button type="submit" class="text-xs bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-600 transition">
+      <button type="submit" data-confirm-title="Konfirmasi Lunas" data-confirm-message="Apakah Anda yakin pembayaran ini sudah lunas dan siap dikonfirmasi?" class="text-xs bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-600 transition">
         <i class="fas fa-check mr-1"></i>Konfirmasi Lunas
       </button>
     </form>

@@ -271,6 +271,13 @@ class OwnerController extends Controller
 
     public function deleteLayanan($id)
     {
+        $katalogCount = DB::table('katalog')->where('id_layanan', $id)->count();
+        if ($katalogCount > 0) {
+            return redirect()->route('owner.layanan')->withErrors([
+                'status' => 'Untuk menghapus layanan ini, hapus dahulu semua katalog yang terkait dengan layanan tersebut. Jumlah katalog terkait: ' . $katalogCount,
+            ]);
+        }
+
         DB::table('layanan')->where('id_layanan', $id)->delete();
         return redirect()->route('owner.layanan')->with('flash', 'Layanan dihapus.');
     }

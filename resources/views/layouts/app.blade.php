@@ -103,6 +103,65 @@
 </script>
 @endif
 
+<div id="cg-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+  <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 overflow-hidden">
+    <div class="p-5 border-b border-slate-200">
+      <div class="text-lg font-semibold text-slate-900" id="cg-confirm-title">Konfirmasi</div>
+    </div>
+    <div class="p-5">
+      <p class="text-sm text-slate-600" id="cg-confirm-message">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+    </div>
+    <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-4 bg-slate-50">
+      <button type="button" id="cg-confirm-cancel" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">Batal</button>
+      <button type="button" id="cg-confirm-ok" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('cg-confirm-modal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('cg-confirm-title');
+    const messageEl = document.getElementById('cg-confirm-message');
+    const okBtn = document.getElementById('cg-confirm-ok');
+    const cancelBtn = document.getElementById('cg-confirm-cancel');
+    let pendingForm = null;
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      pendingForm = null;
+    }
+
+    document.body.addEventListener('click', function (event) {
+      const target = event.target.closest('[data-confirm-message]');
+      if (!target) return;
+
+      const form = target.closest('form');
+      if (!form) return;
+
+      event.preventDefault();
+      pendingForm = form;
+      titleEl.textContent = target.dataset.confirmTitle || 'Konfirmasi';
+      messageEl.textContent = target.dataset.confirmMessage || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
+      modal.classList.remove('hidden');
+    });
+
+    okBtn.addEventListener('click', function () {
+      if (pendingForm) {
+        pendingForm.submit();
+      }
+      closeModal();
+    });
+
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) closeModal();
+    });
+  });
+</script>
+
 @stack('scripts')
 </body>
 </html>

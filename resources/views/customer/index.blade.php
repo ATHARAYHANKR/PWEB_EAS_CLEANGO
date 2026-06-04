@@ -274,8 +274,7 @@ $menu = [
         class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">
     </div>
 
-    <button type="submit"
-      class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold rounded-xl text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+    <button type="submit" data-confirm-title="Kirim Booking" data-confirm-message="Pastikan semua data booking sudah benar sebelum dikirim." class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold rounded-xl text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
       <i class="fas fa-paper-plane mr-2"></i>Kirim Booking
     </button>
   </form>
@@ -442,7 +441,7 @@ function pilihKatalog(idKatalog, idLayanan) {
         @csrf
         <input type="hidden" name="id_order" value="{{ $selOrder->id_order }}">
         <input type="text" name="catatan_bayar" placeholder="Catatan (opsional)" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 mb-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-        <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white font-semibold rounded-xl text-sm hover:opacity-90 transition">
+        <button type="submit" data-confirm-title="Konfirmasi Pembayaran" data-confirm-message="Pastikan Anda telah melakukan pembayaran sebelum mengonfirmasinya." class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white font-semibold rounded-xl text-sm hover:opacity-90 transition">
           <i class="fas fa-check mr-2"></i>Konfirmasi Sudah Bayar
         </button>
       </form>
