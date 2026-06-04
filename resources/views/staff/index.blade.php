@@ -16,6 +16,7 @@ $menu = [
   ['status_laundry',  'fa-sync-alt',   'Update Status'],
   ['konfirmasi_bayar','fa-check-circle','Konfirmasi Bayar', $confirmCount],
   ['history',         'fa-history',    'History Selesai'],
+  ['profil',          'fa-user-circle','Profil Saya'],
 ];
 @endphp
 @foreach($menu as $item)
@@ -32,7 +33,7 @@ $menu = [
 
 @section('topbar-icon')<i class="fas fa-user-tie mr-2 text-emerald-500"></i>@endsection
 @section('topbar-title')
-  @php $titles = ['dashboard'=>'Dashboard Staff','order_masuk'=>'Order Masuk','kelola_order'=>'Kelola Order','status_laundry'=>'Update Status Laundry','konfirmasi_bayar'=>'Konfirmasi Pembayaran','history'=>'History Order Selesai']; @endphp
+  @php $titles = ['dashboard'=>'Dashboard Staff','order_masuk'=>'Order Masuk','kelola_order'=>'Kelola Order','status_laundry'=>'Update Status Laundry','konfirmasi_bayar'=>'Konfirmasi Pembayaran','history'=>'History Order Selesai','profil'=>'Profil Saya']; @endphp
   {{ $titles[$page] ?? 'Dashboard' }}
 @endsection
 
@@ -312,6 +313,87 @@ $menu = [
   @empty
   <div class="py-16 text-center text-slate-400">Belum ada order yang diselesaikan</div>
   @endforelse
+</div>
+
+{{-- ═══ PROFIL ═══ --}}
+@elseif($page === 'profil')
+<div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
+  <h3 class="text-lg font-bold text-slate-800 mb-6"><i class="fas fa-user-circle text-blue-500 mr-2"></i>Profil Saya</h3>
+
+  @if($errors->any())
+  <div class="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
+    <ul class="list-disc list-inside space-y-1">
+      @foreach($errors->all() as $error)
+      <li>{{ $error }}</li>
+      @endforeach
+    </ul>
+  </div>
+  @endif
+
+  @if(session('flash'))
+  <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm">
+    {!! session('flash') !!}
+  </div>
+  @endif
+
+  <form method="POST" action="{{ route('staff.profil.update') }}" class="space-y-5">
+    @csrf
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Nama -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
+        <input type="text" name="nama" value="{{ old('nama', $staff->nama ?? '') }}" required maxlength="100" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+      </div>
+
+      <!-- Nomor Telepon -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Nomor Telepon <span class="text-red-500">*</span></label>
+        <input type="text" name="notelp" value="{{ old('notelp', $staff->notelp ?? '') }}" required pattern="[0-9]{6,20}" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+      </div>
+    </div>
+
+    <!-- Alamat -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Alamat (Opsional)</label>
+      <textarea name="alamat" maxlength="1000" rows="3" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm resize-none">{{ old('alamat', $staff->alamat ?? '') }}</textarea>
+    </div>
+
+    <!-- Password Section -->
+    <div class="border-t border-slate-200 pt-5">
+      <h4 class="text-sm font-semibold text-slate-700 mb-4">Ubah Password (Opsional)</h4>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Password Baru -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Password Baru</label>
+          <input type="password" name="sandi" minlength="6" maxlength="100" placeholder="Biarkan kosong jika tidak ingin mengubah" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+        </div>
+
+        <!-- Konfirmasi Password -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Konfirmasi Password</label>
+          <input type="password" name="sandi_confirm" minlength="6" maxlength="100" placeholder="Ulangi password baru" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+        </div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+      <i class="fas fa-info-circle mr-2"></i>
+      <strong>Catatan:</strong> Data profil akan diperbarui setelah Anda menyimpan formulir ini.
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex gap-3 pt-4 border-t border-slate-200">
+      <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold rounded-lg text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+        <i class="fas fa-save mr-2"></i>Simpan Perubahan
+      </button>
+      <a href="{{ route('staff.dashboard') }}" class="px-6 py-3 bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm hover:bg-slate-300 transition">
+        <i class="fas fa-times mr-1"></i>Batal
+      </a>
+    </div>
+  </form>
 </div>
 @endif
 

@@ -318,6 +318,126 @@ function pilihKatalog(idKatalog, idLayanan) {
 </script>
 @endpush
 
+{{-- ═══════════════ EDIT BOOKING ═══════════════ --}}
+@elseif($page === 'booking_edit')
+<div class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
+  <h3 class="text-lg font-bold text-slate-800 mb-5"><i class="fas fa-edit text-amber-500 mr-2"></i>Edit Booking Laundry</h3>
+  
+  @if($errors->any())
+  <div class="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
+    <ul class="list-disc list-inside space-y-1">
+      @foreach($errors->all() as $error)
+      <li>{{ $error }}</li>
+      @endforeach
+    </ul>
+  </div>
+  @endif
+
+  <form method="POST" action="{{ route('customer.booking.update', $editOrder->id_order) }}" class="space-y-4">
+    @csrf
+    @method('PUT')
+
+    <!-- Kode Order (Read-only) -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Kode Order</label>
+      <input type="text" value="{{ $editOrder->kode_order }}" disabled class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 text-sm">
+    </div>
+
+    <!-- Status (Read-only) -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Status Order</label>
+      <input type="text" value="{{ $editOrder->status_order }}" disabled class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 text-sm">
+    </div>
+
+    <!-- Jenis Layanan -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Jenis Layanan <span class="text-red-500">*</span></label>
+      <select name="id_layanan" id="layananSel2" onchange="filterKatalog2()" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+        <option value="">-- Pilih Jenis Layanan --</option>
+        @foreach($layananList as $l)
+        <option value="{{ $l->id_layanan }}" {{ $editOrder->id_layanan == $l->id_layanan ? 'selected' : '' }}>{{ $l->nama_layanan }}</option>
+        @endforeach
+      </select>
+    </div>
+
+    <!-- Paket Layanan -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Paket Layanan <span class="text-red-500">*</span></label>
+      <select name="id_katalog" id="katalogSel2" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+        <option value="">-- Pilih Paket --</option>
+        @foreach($katalogList as $k)
+        <option value="{{ $k->id_katalog }}" data-layanan="{{ $k->id_layanan }}" {{ $editDetail->id_katalog == $k->id_katalog ? 'selected' : '' }}>
+          {{ $k->varian }} - Rp {{ number_format($k->harga,0,',','.') }}
+        </option>
+        @endforeach
+      </select>
+    </div>
+
+    <!-- Alamat Penjemputan -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Alamat Penjemputan <span class="text-red-500">*</span></label>
+      <textarea name="alamat" required maxlength="1000" rows="3" placeholder="Masukkan alamat lengkap..." class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm resize-none">{{ $editOrder->alamat_penjemputan }}</textarea>
+    </div>
+
+    <!-- Tanggal Jemput -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Tanggal Jemput <span class="text-red-500">*</span></label>
+      <input type="date" name="tanggal_jemput" value="{{ $editOrder->jadwal_jemput ? \Carbon\Carbon::parse($editOrder->jadwal_jemput)->format('Y-m-d') : '' }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+    </div>
+
+    <!-- Sesi Jemput -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Sesi Jemput <span class="text-red-500">*</span></label>
+      <select name="sesi_jemput" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+        <option value="">-- Pilih Sesi --</option>
+        @php
+          $jadwalJemput = $editOrder->jadwal_jemput ? \Carbon\Carbon::parse($editOrder->jadwal_jemput)->format('H:i') : '';
+          $sesiList = ['08:00' => '08:00 - 10:00 Pagi', '10:00' => '10:00 - 12:00 Siang', '14:00' => '14:00 - 16:00 Sore', '16:00' => '16:00 - 18:00 Malam'];
+        @endphp
+        @foreach($sesiList as $val => $label)
+        <option value="{{ $val }}" {{ $jadwalJemput === $val ? 'selected' : '' }}>{{ $label }}</option>
+        @endforeach
+      </select>
+    </div>
+
+    <!-- Catatan -->
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Catatan (Opsional)</label>
+      <textarea name="catatan" maxlength="1000" rows="3" placeholder="Catatan khusus untuk staff..." class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm resize-none">{{ $editOrder->catatan }}</textarea>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex gap-3 pt-4">
+      <button type="submit" data-confirm-title="Simpan Perubahan" data-confirm-message="Pastikan data sudah benar sebelum menyimpan perubahan." class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-700 text-white font-semibold rounded-xl text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+        <i class="fas fa-save mr-2"></i>Simpan Perubahan
+      </button>
+      <form method="POST" action="{{ route('customer.booking.delete', $editOrder->id_order) }}" style="display:inline;">
+        @csrf
+        @method('DELETE')
+        <button type="submit" data-confirm-title="Hapus Booking" data-confirm-message="Anda yakin ingin menghapus booking ini? Tindakan ini tidak bisa dibatalkan." class="px-5 py-3 bg-red-500 text-white font-semibold rounded-xl text-sm hover:bg-red-600 transition">
+          <i class="fas fa-trash mr-1"></i>Hapus
+        </button>
+      </form>
+      <a href="{{ route('customer.riwayat') }}" class="px-5 py-3 bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-300 transition">
+        <i class="fas fa-times mr-1"></i>Batal
+      </a>
+    </div>
+  </form>
+</div>
+
+@push('scripts')
+<script>
+function filterKatalog2() {
+  var sel = document.getElementById('layananSel2').value;
+  var opts = document.getElementById('katalogSel2').options;
+  for (var i = 1; i < opts.length; i++) {
+    opts[i].style.display = (sel === '' || opts[i].dataset.layanan === sel) ? '' : 'none';
+  }
+}
+filterKatalog2();
+</script>
+@endpush
+
 {{-- ═══════════════ RIWAYAT ═══════════════ --}}
 @elseif($page === 'riwayat')
 <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -359,6 +479,22 @@ function pilihKatalog(idKatalog, idLayanan) {
         <div><span class="text-slate-400">Berat / Qty</span><br><strong>{{ $selOrder->berat ? $selOrder->berat.' kg' : ($selOrder->qty ? $selOrder->qty.' pcs' : 'Belum diverifikasi') }}</strong></div>
         <div><span class="text-slate-400">Total</span><br><strong>{{ $selOrder->total_harga > 0 ? 'Rp '.number_format($selOrder->total_harga,0,',','.') : 'Belum dihitung' }}</strong></div>
       </div>
+
+      <!-- Action Buttons untuk Menunggu Konfirmasi -->
+      @if($selOrder->status_order === 'Menunggu Konfirmasi')
+      <div class="flex gap-2 mb-5 pb-5 border-b border-slate-100">
+        <a href="{{ route('customer.booking.edit', $selOrder->id_order) }}" class="flex-1 flex items-center justify-center gap-2 bg-amber-500 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-amber-600 transition">
+          <i class="fas fa-edit"></i>Edit
+        </a>
+        <form method="POST" action="{{ route('customer.booking.delete', $selOrder->id_order) }}" style="flex: 1;">
+          @csrf
+          @method('DELETE')
+          <button type="submit" data-confirm-title="Hapus Booking" data-confirm-message="Anda yakin ingin menghapus booking ini? Tindakan ini tidak bisa dibatalkan." class="w-full flex items-center justify-center gap-2 bg-red-500 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-red-600 transition">
+            <i class="fas fa-trash"></i>Hapus
+          </button>
+        </form>
+      </div>
+      @endif
 
       @if($selTracking && $selTracking->count())
       <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Timeline</h4>

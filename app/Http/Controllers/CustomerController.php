@@ -122,6 +122,106 @@ class CustomerController extends Controller
             ->with('flash', "Booking <strong>{$kode}</strong> berhasil dibuat!");
     }
 
+    // ── EDIT BOOKING ─────────────────────────────────────────
+    public function editBooking($id)
+    {
+        $custId = $this->id();
+        $order = Order::where('id_order', $id)->where('id_cust', $custId)->first();
+
+        if (!$order || !in_array($order->status_order, ['Menunggu Konfirmasi'])) {
+            return redirect()->route('customer.riwayat')->withErrors(['edit' => 'Booking tidak bisa diedit. Hanya booking yang belum dikonfirmasi yang bisa diedit.']);
+        }
+
+        $profil = User::find($custId);
+        $settings = AppSetting::pluck('value', 'key')->toArray();
+
+        return view('customer.index', [
+            'page'         => 'booking_edit',
+            'customerName' => $this->nama(),
+            'layananList'  => Layanan::where('is_active', 1)->get(),
+            'katalogList'  => Katalog::join('layanan', 'layanan.id_layanan', '=', 'katalog.id_layanan')
+                ->where('katalog.status', 'Aktif')
+                ->select('katalog.*', 'layanan.nama_layanan')
+                ->orderBy('layanan.nama_layanan')->orderBy('katalog.varian')
+                ->get(),
+            'profil'       => $profil,
+            'editOrder'    => $order,
+            'editDetail'   => OrderDetail::where('id_order', $id)->first(),
+            'ordersBayar'  => collect(),
+            'settings'     => $settings,
+            'unreadCount'  => CG::countUnread('customer', $custId),
+        ]);
+    }
+
+    // ── UPDATE BOOKING ───────────────────────────────────────
+    public function updateBooking(Request $request, $id)
+    {
+        $custId = $this->id();
+        $order = Order::where('id_order', $id)->where('id_cust', $custId)->first();
+
+        if (!$order || !in_array($order->status_order, ['Menunggu Konfirmasi'])) {
+            return redirect()->route('customer.riwayat')->withErrors(['edit' => 'Booking tidak bisa diedit.']);
+        }
+
+        $data = $request->validate([
+            'id_layanan'   => ['required', 'integer', 'exists:layanan,id_layanan'],
+            'id_katalog'   => ['required', 'integer', 'exists:katalog,id_katalog'],
+            'alamat'       => ['required', 'string', 'max:1000'],
+            'tanggal_jemput' => ['required', 'date'],
+            'sesi_jemput'  => ['required', 'string', 'max:20'],
+            'catatan'      => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $waktu = substr($data['sesi_jemput'], 0, 5);
+        $jadwal = $data['tanggal_jemput'] . ' ' . $waktu . ':00';
+
+        $order->update([
+            'id_layanan' => $data['id_layanan'],
+            'alamat_penjemputan' => $data['alamat'],
+            'jadwal_jemput' => $jadwal,
+            'catatan' => $data['catatan'] ?? null,
+        ]);
+
+        $katalog = Katalog::find($data['id_katalog']);
+        if ($katalog) {
+            OrderDetail::where('id_order', $id)->update([
+                'id_katalog' => $katalog->id_katalog,
+                'harga_satuan' => $katalog->harga,
+            ]);
+        }
+
+        return redirect()->route('customer.riwayat')
+            ->with('flash', "Booking <strong>{$order->kode_order}</strong> berhasil diperbarui!");
+    }
+
+    // ── DELETE BOOKING ───────────────────────────────────────
+    public function deleteBooking(Request $request, $id)
+    {
+        $custId = $this->id();
+        $order = Order::where('id_order', $id)->where('id_cust', $custId)->first();
+
+        if (!$order || !in_array($order->status_order, ['Menunggu Konfirmasi'])) {
+            return redirect()->route('customer.riwayat')->withErrors(['delete' => 'Booking tidak bisa dihapus. Hanya booking yang belum dikonfirmasi yang bisa dihapus.']);
+        }
+
+        $kodeOrder = $order->kode_order;
+        
+        DB::transaction(function () use ($id, $custId) {
+            OrderDetail::where('id_order', $id)->delete();
+            Tracking::where('id_order', $id)->delete();
+            Order::where('id_order', $id)->where('id_cust', $custId)->delete();
+        });
+
+        CG::notifyAllOwner(
+            "🗑️ Booking Dibatalkan: {$kodeOrder}",
+            "Customer {$this->nama()} membatalkan booking {$kodeOrder}.",
+            route('owner.semua_order')
+        );
+
+        return redirect()->route('customer.riwayat')
+            ->with('flash', "Booking <strong>{$kodeOrder}</strong> berhasil dihapus!");
+    }
+
     // ── RIWAYAT ──────────────────────────────────────────────
     public function riwayat(Request $request)
     {

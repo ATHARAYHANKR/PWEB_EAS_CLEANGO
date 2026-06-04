@@ -20,6 +20,9 @@ Route::middleware(['role:customer'])->prefix('customer')->name('customer.')->gro
     Route::get('/dashboard',       [CustomerController::class, 'dashboard'])->name('dashboard');
     Route::get('/booking',         [CustomerController::class, 'booking'])->name('booking');
     Route::post('/booking',        [CustomerController::class, 'storeBooking'])->name('booking.store');
+    Route::get('/booking/{id}/edit', [CustomerController::class, 'editBooking'])->name('booking.edit');
+    Route::put('/booking/{id}',    [CustomerController::class, 'updateBooking'])->name('booking.update');
+    Route::delete('/booking/{id}', [CustomerController::class, 'deleteBooking'])->name('booking.delete');
     Route::get('/riwayat',         [CustomerController::class, 'riwayat'])->name('riwayat');
     Route::get('/pembayaran',      [CustomerController::class, 'pembayaran'])->name('pembayaran');
     Route::post('/pembayaran',     [CustomerController::class, 'uploadBukti'])->name('pembayaran.upload');
@@ -43,6 +46,8 @@ Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(functi
     Route::get('/konfirmasi-bayar', [StaffController::class, 'konfirmasiBayar'])->name('konfirmasi_bayar');
     Route::post('/konfirmasi-bayar',[StaffController::class, 'doKonfirmasi'])->name('konfirmasi_bayar.do');
     Route::get('/history',          [StaffController::class, 'history'])->name('history');
+    Route::get('/profil',           [StaffController::class, 'profil'])->name('profil');
+    Route::post('/profil',          [StaffController::class, 'updateProfil'])->name('profil.update');
 });
 
 // ─── OWNER ───────────────────────────────────────────────────

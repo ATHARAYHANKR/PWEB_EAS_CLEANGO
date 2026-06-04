@@ -387,4 +387,57 @@ class StaffController extends Controller
             'kelolaCount' => $this->kelolaCount(),
         ]);
     }
+
+    // ── PROFIL ───────────────────────────────────────────────
+    public function profil()
+    {
+        $id     = $this->id();
+        $staff  = DB::table('staff')->where('id_staff', $id)->first();
+        $user   = DB::table('users')->where('id_staff', $id)->first();
+
+        return view('staff.index', [
+            'page'        => 'profil',
+            'staffName'   => $this->nama(),
+            'staff'       => $staff,
+            'user'        => $user,
+            'unreadCount' => CG::countUnread('staff', $id),
+            'kelolaCount' => $this->kelolaCount(),
+        ]);
+    }
+
+    // ── UPDATE PROFIL ────────────────────────────────────────
+    public function updateProfil(Request $request)
+    {
+        $id = $this->id();
+        $data = $request->validate([
+            'nama'        => ['required', 'string', 'max:100'],
+            'notelp'      => ['required', 'digits_between:6,20'],
+            'alamat'      => ['nullable', 'string', 'max:1000'],
+            'sandi'       => ['nullable', 'string', 'min:6', 'max:100'],
+            'sandi_confirm' => ['nullable', 'string', 'min:6', 'max:100'],
+        ]);
+
+        // Validasi password match
+        if ($data['sandi'] && $data['sandi'] !== $data['sandi_confirm']) {
+            return redirect()->route('staff.profil')->withErrors(['sandi' => 'Password tidak cocok.']);
+        }
+
+        DB::transaction(function () use ($id, $data) {
+            DB::table('staff')->where('id_staff', $id)->update([
+                'nama' => $data['nama'],
+                'notelp' => $data['notelp'],
+                'alamat' => $data['alamat'] ?? null,
+            ]);
+
+            if ($data['sandi']) {
+                DB::table('users')->where('id_staff', $id)->update([
+                    'sandi' => bcrypt($data['sandi']),
+                ]);
+            }
+        });
+
+        Session::put('nama', $data['nama']);
+
+        return redirect()->route('staff.profil')->with('flash', 'Profil berhasil diperbarui.');
+    }
 }
