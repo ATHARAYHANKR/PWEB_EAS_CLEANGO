@@ -391,15 +391,13 @@ class StaffController extends Controller
     // ── PROFIL ───────────────────────────────────────────────
     public function profil()
     {
-        $id     = $this->id();
-        $staff  = DB::table('staff')->where('id_staff', $id)->first();
-        $user   = DB::table('users')->where('id_staff', $id)->first();
+        $id    = $this->id();
+        $staff = DB::table('staff')->where('id_staff', $id)->first();
 
         return view('staff.index', [
             'page'        => 'profil',
             'staffName'   => $this->nama(),
             'staff'       => $staff,
-            'user'        => $user,
             'unreadCount' => CG::countUnread('staff', $id),
             'kelolaCount' => $this->kelolaCount(),
         ]);
@@ -430,7 +428,7 @@ class StaffController extends Controller
             ]);
 
             if ($data['sandi']) {
-                DB::table('users')->where('id_staff', $id)->update([
+                DB::table('staff')->where('id_staff', $id)->update([
                     'sandi' => bcrypt($data['sandi']),
                 ]);
             }
