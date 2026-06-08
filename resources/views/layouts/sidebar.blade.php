@@ -1,10 +1,10 @@
 @php
 use Illuminate\Support\Facades\Route;
 
-{{-- Role saat ini diambil dari session. Jika tidak tersedia, gunakan customer sebagai fallback. --}}
+/* Role saat ini diambil dari session. Jika tidak tersedia, gunakan customer sebagai fallback. */
 $role = session('role', 'customer');
 
-{{-- Tema visual untuk masing-masing role: background, warna aktif/inaktif, icon, dan label panel. --}}
+/* Tema visual untuk masing-masing role: background, warna aktif/inaktif, icon, dan label panel. */
 $themes = [
     'customer' => [
         'bg'       => 'bg-[#1e3a5f]',
@@ -36,7 +36,7 @@ $themes = [
 ];
 $t = $themes[$role] ?? $themes['customer'];
 
-{{-- Menu per role — route name, icon, label, badge_count (opsional) --}}
+/* Menu per role — route name, icon, label, badge_count (opsional) */
 $menus = [
     'owner' => [
         ['owner.dashboard',   'fa-th-large',       'Dashboard'],
@@ -69,7 +69,7 @@ $menus = [
 
 $navItems = $menus[$role] ?? [];
 
-{{-- Deteksi current route untuk active state agar menu yang sedang dibuka bisa ditandai. --}}
+/* Deteksi current route untuk active state agar menu yang sedang dibuka bisa ditandai. */
 $currentRoute = Route::currentRouteName();
 @endphp
 
