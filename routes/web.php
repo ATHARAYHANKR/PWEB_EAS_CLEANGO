@@ -8,6 +8,8 @@ use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // ─── AUTH ───────────────────────────────────────────────────
+// Route publik untuk login/register.
+// Jika session user_id sudah ada, controller login/register akan redirect otomatis ke dashboard role terkait.
 Route::get('/',         [LoginController::class, 'showLogin'])->name('login');
 Route::get('/login',    [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login',   [LoginController::class, 'login'])->name('login.post');
@@ -16,6 +18,8 @@ Route::get('/register', [LoginController::class, 'showRegister'])->name('registe
 Route::post('/register',[LoginController::class, 'register'])->name('register.post');
 
 // ─── CUSTOMER ────────────────────────────────────────────────
+// Routes untuk role `customer`. Middleware `role:customer` memastikan hanya customer yang mengakses.
+// Semua route di-prefix `customer` dan diberi nama route `customer.*`.
 Route::middleware(['role:customer'])->prefix('customer')->name('customer.')->group(function () {
     Route::get('/dashboard',       [CustomerController::class, 'dashboard'])->name('dashboard');
     Route::get('/booking',         [CustomerController::class, 'booking'])->name('booking');
@@ -35,6 +39,7 @@ Route::middleware(['role:customer'])->prefix('customer')->name('customer.')->gro
 });
 
 // ─── STAFF ───────────────────────────────────────────────────
+// Routes untuk staf: menerima order, mengelola status, konfirmasi pembayaran.
 Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/dashboard',        [StaffController::class, 'dashboard'])->name('dashboard');
     Route::get('/order-masuk',      [StaffController::class, 'orderMasuk'])->name('order_masuk');
@@ -51,6 +56,7 @@ Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(functi
 });
 
 // ─── OWNER ───────────────────────────────────────────────────
+// Routes untuk pemilik (admin): manajemen katalog, layanan, staff, laporan, pengaturan.
 Route::middleware(['role:owner'])->prefix('owner')->name('owner.')->group(function () {
     Route::get('/dashboard',          [OwnerController::class, 'dashboard'])->name('dashboard');
     Route::get('/orders',             [OwnerController::class, 'semuaOrder'])->name('semua_order');
@@ -79,6 +85,7 @@ Route::middleware(['role:owner'])->prefix('owner')->name('owner.')->group(functi
 });
 
 // ─── NOTIFICATIONS ───────────────────────────────────────────
+// Endpoint AJAX untuk mengambil notifikasi dan menandai sebagai dibaca. Di-protect oleh middleware role.
 Route::middleware(['role:customer,staff,owner'])->group(function () {
     Route::get('/notifications',       [NotificationController::class, 'get'])->name('notifications.get');
     Route::post('/notifications/read', [NotificationController::class, 'markRead'])->name('notifications.read');

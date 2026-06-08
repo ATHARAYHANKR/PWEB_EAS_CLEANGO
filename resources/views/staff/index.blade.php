@@ -1,96 +1,150 @@
 @extends('layouts.app')
 
 @section('title', 'Staff - CleanGo')
-@section('sidebar-icon')<i class="fas fa-user-tie"></i>@endsection
-@section('sidebar-panel')Panel Staff@endsection
-
-@section('sidebar-nav')
-@php
-$staffCount = isset($masuk) ? $masuk->count() : 0;
-$confirmCount = isset($konfBayar) ? $konfBayar->count() : 0;
-$kelolaCount = isset($kelolaCount) ? $kelolaCount : 0;
-$menu = [
-  ['dashboard',       'fa-th-large',   'Dashboard'],
-  ['order_masuk',     'fa-inbox',      'Order Masuk', $staffCount],
-  ['kelola_order',    'fa-tasks',      'Kelola Order', $kelolaCount],
-  ['status_laundry',  'fa-sync-alt',   'Update Status'],
-  ['konfirmasi_bayar','fa-check-circle','Konfirmasi Bayar', $confirmCount],
-  ['history',         'fa-history',    'History Selesai'],
-  ['profil',          'fa-user-circle','Profil Saya'],
-];
-@endphp
-@foreach($menu as $item)
-@php [$key,$icon,$label] = $item; $badge = $item[3] ?? 0; @endphp
-<a href="{{ route('staff.'.$key) }}"
-   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition {{ $page === $key ? 'bg-white/20 text-white' : 'text-white/75 hover:bg-white/10 hover:text-white' }}">
-  <i class="fas {{ $icon }} w-4 text-center"></i> {{ $label }}
-  @if($badge > 0)
-  <span class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">{{ $badge }}</span>
-  @endif
-</a>
-@endforeach
-@endsection
-
-@section('topbar-icon')<i class="fas fa-user-tie mr-2 text-emerald-500"></i>@endsection
 @section('topbar-title')
   @php $titles = ['dashboard'=>'Dashboard Staff','order_masuk'=>'Order Masuk','kelola_order'=>'Kelola Order','status_laundry'=>'Update Status Laundry','konfirmasi_bayar'=>'Konfirmasi Pembayaran','history'=>'History Order Selesai','profil'=>'Profil Saya']; @endphp
   {{ $titles[$page] ?? 'Dashboard' }}
 @endsection
 
 @section('content')
+{{-- Halaman utama Staff: menampilkan dashboard dan akses ke fitur order seperti ambil order,
+     verifikasi berat, update status, konfirmasi pembayaran, history, dan profil. --}}
 
 {{-- ═══ DASHBOARD ═══ --}}
 @if($page === 'dashboard')
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-  @foreach([['📦','Order Masuk',$masuk->count(),'amber'],['🔄','Diproses',$diproses->count(),'blue'],['⚖️','Perlu Timbang',$needWeight->count(),'orange'],['💳','Konfirmasi Bayar',$konfBayar->count(),'emerald']] as [$e,$l,$v,$c])
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
-    <div class="text-2xl">{{ $e }}</div>
-    <div><div class="text-[11px] text-slate-500">{{ $l }}</div><div class="text-xl font-bold text-{{ $c }}-600">{{ $v }}</div></div>
+{{-- ── STAT CARDS ── --}}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+  <div class="bg-white rounded-2xl border border-amber-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-amber-500 uppercase tracking-wider">Order Masuk</span>
+      <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 text-sm">
+        <i class="fas fa-inbox"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-amber-600 leading-none">{{ $masuk->count() }}</div>
+    <div class="text-[11px] text-slate-400">Menunggu diambil</div>
+  </div>
+  <div class="bg-white rounded-2xl border border-blue-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Diproses</span>
+      <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 text-sm">
+        <i class="fas fa-sync-alt"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-blue-600 leading-none">{{ $diproses->count() }}</div>
+    <div class="text-[11px] text-slate-400">Sedang dikerjakan</div>
+  </div>
+  <div class="bg-white rounded-2xl border border-orange-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-orange-500 uppercase tracking-wider">Perlu Timbang</span>
+      <div class="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 text-sm">
+        <i class="fas fa-weight"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-orange-600 leading-none">{{ $needWeight->count() }}</div>
+    <div class="text-[11px] text-slate-400">Verifikasi berat</div>
+  </div>
+  <div class="bg-cyan-700 rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-cyan-200 uppercase tracking-wider">Konfirmasi Bayar</span>
+      <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-sm">
+        <i class="fas fa-credit-card"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-white leading-none">{{ $konfBayar->count() }}</div>
+    <div class="text-[11px] text-cyan-200">Menunggu konfirmasi</div>
+  </div>
+</div>
+
+{{-- ── CONTENT PANELS ── --}}
+{{-- Panel ringkasan order menunggu dan pembayaran menunggu.
+     Data disediakan oleh controller: $masuk untuk order baru dan $konfBayar untuk pembayaran. --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+@if($masuk->count())
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+    <div>
+      <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+        Order Menunggu Konfirmasi
+      </div>
+      <div class="text-[11px] text-slate-400 mt-0.5">{{ $masuk->count() }} order baru masuk</div>
+    </div>
+  </div>
+  @foreach($masuk as $o)
+  <div class="px-5 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="font-mono text-sm font-bold text-slate-800">{{ $o->kode_order }}</div>
+        <div class="text-xs text-slate-500 mt-0.5">{{ $o->nama_cust }} • {{ $o->nama_layanan }}</div>
+      </div>
+      <form method="POST" action="{{ route('staff.ambil_order') }}" class="shrink-0">
+        @csrf
+        <input type="hidden" name="id_order" value="{{ $o->id_order }}">
+        <button type="submit" data-confirm-title="Ambil Order" data-confirm-message="Apakah Anda yakin ingin mengambil order ini?"
+          class="inline-flex items-center gap-1.5 text-xs bg-cyan-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-cyan-700 transition">
+          <i class="fas fa-car text-[10px]"></i> Ambil
+        </button>
+      </form>
+    </div>
   </div>
   @endforeach
 </div>
-
-@if($masuk->count())
-<div class="mb-6 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-  <div class="px-5 py-4 border-b border-slate-100 bg-amber-50"><span class="font-semibold text-amber-800">📦 Order Menunggu Konfirmasi</span></div>
-  @foreach($masuk as $o)
-  <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between hover:bg-slate-50 transition">
-    <div>
-      <span class="font-mono text-sm font-bold">{{ $o->kode_order }}</span>
-      <span class="ml-2 text-xs text-slate-500">{{ $o->nama_cust }}</span>
-      <span class="ml-2 text-xs text-slate-400">{{ $o->nama_layanan }}</span>
-    </div>
-    <form method="POST" action="{{ route('staff.ambil_order') }}" class="inline">
-      @csrf
-      <input type="hidden" name="id_order" value="{{ $o->id_order }}">
-      <button type="submit" data-confirm-title="Ambil Order" data-confirm-message="Apakah Anda yakin ingin mengambil order ini?" class="text-xs bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-emerald-600 transition">Ambil Order</button>
-    </form>
+@else
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-8 flex flex-col items-center justify-center text-center">
+  <div class="w-12 h-12 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-500 text-xl mb-3">
+    <i class="fas fa-check-circle"></i>
   </div>
-  @endforeach
+  <div class="text-sm font-semibold text-slate-700">Tidak Ada Order Masuk</div>
+  <div class="text-xs text-slate-400 mt-1">Semua order sudah diambil</div>
 </div>
 @endif
 
 @if($konfBayar->count())
-<div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-  <div class="px-5 py-4 border-b border-slate-100 bg-emerald-50"><span class="font-semibold text-emerald-800">💳 Konfirmasi Pembayaran</span></div>
-  @foreach($konfBayar as $p)
-  <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between hover:bg-slate-50 transition">
-    <div>
-      <span class="font-mono text-sm font-bold">{{ $p->kode_order }}</span>
-      <span class="ml-2 text-xs text-slate-500">{{ $p->nama_cust }}</span>
-      <span class="ml-2 text-xs font-semibold text-emerald-600">Rp {{ number_format($p->jumlah,0,',','.') }}</span>
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-slate-100">
+    <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+      Konfirmasi Pembayaran
     </div>
-    <form method="POST" action="{{ route('staff.konfirmasi_bayar.do') }}" class="inline">
-      @csrf
-      <input type="hidden" name="id_bayar" value="{{ $p->id_bayar }}">
-      <button type="submit" data-confirm-title="Konfirmasi Pembayaran" data-confirm-message="Konfirmasi pembayaran order ini sebagai lunas?" class="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-600 transition">Konfirmasi</button>
-    </form>
+    <div class="text-[11px] text-slate-400 mt-0.5">{{ $konfBayar->count() }} pembayaran menunggu</div>
+  </div>
+  @foreach($konfBayar as $p)
+  <div class="px-5 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="font-mono text-sm font-bold text-slate-800">{{ $p->kode_order }}</div>
+        <div class="text-xs text-slate-500 mt-0.5">{{ $p->nama_cust }}</div>
+        <div class="text-sm font-bold text-emerald-600 mt-1">Rp {{ number_format($p->jumlah,0,',','.') }}</div>
+      </div>
+      <form method="POST" action="{{ route('staff.konfirmasi_bayar.do') }}" class="shrink-0">
+        @csrf
+        <input type="hidden" name="id_bayar" value="{{ $p->id_bayar }}">
+        <button type="submit" data-confirm-title="Konfirmasi Pembayaran" data-confirm-message="Konfirmasi pembayaran order ini sebagai lunas?"
+          class="inline-flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition">
+          <i class="fas fa-check text-[10px]"></i> Konfirmasi
+        </button>
+      </form>
+    </div>
   </div>
   @endforeach
 </div>
+@else
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-8 flex flex-col items-center justify-center text-center">
+  <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 text-xl mb-3">
+    <i class="fas fa-check-double"></i>
+  </div>
+  <div class="text-sm font-semibold text-slate-700">Tidak Ada Pembayaran Pending</div>
+  <div class="text-xs text-slate-400 mt-1">Semua pembayaran sudah dikonfirmasi</div>
+</div>
 @endif
 
+</div>
+
 {{-- ═══ ORDER MASUK ═══ --}}
+{{-- Halaman order masuk: staff memilih order untuk mulai diproses.
+     Controller menyediakan $masuk sebagai daftar order belum diambil. --}}
 @elseif($page === 'order_masuk')
 @if($masuk->count())
 <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-3">
@@ -112,8 +166,8 @@ $menu = [
       <form method="POST" action="{{ route('staff.ambil_order') }}">
         @csrf
         <input type="hidden" name="id_order" value="{{ $o->id_order }}">
-        <button type="submit" data-confirm-title="Ambil Order" data-confirm-message="Apakah Anda yakin ingin mengambil order ini?" class="text-xs bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-600 transition">
-          <i class="fas fa-car mr-1"></i>Ambil Order
+        <button type="submit" data-confirm-title="Ambil Order" data-confirm-message="Apakah Anda yakin ingin mengambil order ini?" class="inline-flex items-center gap-2 text-xs bg-cyan-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-cyan-700 transition">
+          <i class="fas fa-car text-[10px]"></i>Ambil Order
         </button>
       </form>
     </div>
@@ -124,6 +178,8 @@ $menu = [
 </div>
 
 {{-- ═══ KELOLA ORDER ═══ --}}
+{{-- Halaman kelola order: isi berat atau qty untuk order yang sudah diambil.
+     Mendukung order dengan status perlu timbang dan order lunas yang siap diproses. --}}
 @elseif($page === 'kelola_order')
 @if($needWeight->count() || $paid->count())
 <div class="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
@@ -200,8 +256,8 @@ $menu = [
         </div>
         @endif
 
-        <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white font-semibold rounded-xl text-sm hover:opacity-90 transition">
-          <i class="fas fa-check mr-2"></i>Simpan & Kirim Tagihan ke Customer
+        <button type="submit" class="w-full py-2.5 bg-cyan-700 text-white font-semibold rounded-xl text-sm hover:bg-cyan-800 transition inline-flex items-center justify-center gap-2">
+          <i class="fas fa-check text-[11px]"></i>Simpan & Kirim Tagihan ke Customer
         </button>
       </form>
     </div>
@@ -252,7 +308,7 @@ $menu = [
         @csrf
         <input type="hidden" name="id_order" value="{{ $selOrder->id_order }}">
         <input type="hidden" name="new_status" value="{{ $nextStatusMap[$selOrder->status_order] }}">
-        <button type="submit" data-confirm-title="Update Status Laundry" data-confirm-message="Ubah status order ini menjadi {{ $nextStatusMap[$selOrder->status_order] }}?" class="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold rounded-xl text-sm hover:opacity-90 transition">
+        <button type="submit" data-confirm-title="Update Status Laundry" data-confirm-message="Ubah status order ini menjadi {{ $nextStatusMap[$selOrder->status_order] }}?" class="w-full py-2.5 bg-blue-700 text-white font-semibold rounded-xl text-sm hover:bg-blue-800 transition inline-flex items-center justify-center gap-2">
           <i class="fas fa-arrow-right mr-2"></i>Lanjut ke: <strong>{{ $nextStatusMap[$selOrder->status_order] }}</strong>
         </button>
       </form>
@@ -283,8 +339,8 @@ $menu = [
     <form method="POST" action="{{ route('staff.konfirmasi_bayar.do') }}">
       @csrf
       <input type="hidden" name="id_bayar" value="{{ $p->id_bayar }}">
-      <button type="submit" data-confirm-title="Konfirmasi Lunas" data-confirm-message="Apakah Anda yakin pembayaran ini sudah lunas dan siap dikonfirmasi?" class="text-xs bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-600 transition">
-        <i class="fas fa-check mr-1"></i>Konfirmasi Lunas
+      <button type="submit" data-confirm-title="Konfirmasi Lunas" data-confirm-message="Apakah Anda yakin pembayaran ini sudah lunas dan siap dikonfirmasi?" class="inline-flex items-center gap-2 text-xs bg-cyan-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-cyan-700 transition">
+        <i class="fas fa-check text-[10px]"></i>Konfirmasi Lunas
       </button>
     </form>
   </div>
@@ -386,7 +442,7 @@ $menu = [
 
     <!-- Buttons -->
     <div class="flex gap-3 pt-4 border-t border-slate-200">
-      <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold rounded-lg text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+      <button type="submit" class="flex-1 py-3 bg-blue-700 text-white font-semibold rounded-lg text-sm hover:bg-blue-800 transition inline-flex items-center justify-center gap-2">
         <i class="fas fa-save mr-2"></i>Simpan Perubahan
       </button>
       <a href="{{ route('staff.dashboard') }}" class="px-6 py-3 bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm hover:bg-slate-300 transition">

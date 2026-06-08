@@ -9,11 +9,15 @@ use Illuminate\Support\Facades\Session;
 
 class StaffController extends Controller
 {
+    // Ambil id staff dari session
     private function id()   { return Session::get('user_id'); }
+    // Ambil nama staff dari session
     private function nama() { return Session::get('nama'); }
-
+    // Helper: ambil semua order yang masih aktif (belum selesai/dibatalkan)
     private function allActiveOrders()
     {
+        // Query komposit menggabungkan tabel orders, layanan, user, detail, katalog, dan pembayaran
+        // Hasil dipakai di dashboard/kelola/status untuk memfilter kategori order
         return DB::table('orders as o')
             ->join('layanan as l', 'l.id_layanan', '=', 'o.id_layanan')
             ->join('users as u', 'u.id_cust', '=', 'o.id_cust')
@@ -32,6 +36,9 @@ class StaffController extends Controller
     private function kelolaCount()
     {
         $orders = $this->allActiveOrders();
+        // Hitung order yang perlu tindakan oleh staff:
+        // - Status 'Dijemput' tapi belum ada total_harga (berat belum diverifikasi)
+        // - Atau yang sudah Lunas dan masih dalam proses (butuh lanjutan pengerjaan)
         return $orders->filter(fn($o) =>
             ($o->status_order === 'Dijemput' && (!$o->total_harga || $o->total_harga == 0))
             || ($o->status_bayar === 'Lunas' && in_array($o->status_order, ['Dijemput', 'Dicuci', 'Disetrika', 'Dikirim']))
@@ -40,6 +47,7 @@ class StaffController extends Controller
 
     public function dashboard()
     {
+        // Siapkan data ringkasan untuk dashboard staff
         $id     = $this->id();
         $orders = $this->allActiveOrders();
         $masuk      = $orders->filter(fn($o) => $o->status_order === 'Menunggu Konfirmasi');
@@ -58,7 +66,7 @@ class StaffController extends Controller
             ->select('o.*', 'l.nama_layanan', 'u.nama_cust')
             ->where('o.status_order', 'Selesai')->where('o.id_staff', $id)
             ->orderByDesc('o.updated_at')->limit(20)->get();
-
+        // Kembalikan view dashboard dengan data kategori order untuk staff
         return view('staff.index', compact(
             'masuk','diproses','needWeight','paid','konfBayar','selesai'
         ) + [
@@ -71,6 +79,7 @@ class StaffController extends Controller
 
     public function orderMasuk()
     {
+        // Halaman daftar order masuk (Menunggu Konfirmasi)
         $id    = $this->id();
         $masuk = $this->allActiveOrders()->filter(fn($o) => $o->status_order === 'Menunggu Konfirmasi');
         return view('staff.index', [
@@ -84,7 +93,8 @@ class StaffController extends Controller
 
     public function ambilOrder(Request $request)
     {
-        // ✅ REVISI: Validasi server-side
+        // Ambil order: validasi dan assign staff, update tracking
+        // Validasi server-side
         $request->validate([
             'id_order' => ['required', 'integer', 'exists:orders,id_order'],
         ], [
@@ -95,6 +105,7 @@ class StaffController extends Controller
         $id      = $this->id();
         $idOrder = (int)$request->input('id_order');
 
+        // Lakukan update order dan insert tracking dalam satu transaksi agar konsisten
         DB::transaction(function () use ($idOrder, $id) {
             DB::table('orders')->where('id_order', $idOrder)
                 ->update(['id_staff' => $id, 'status_order' => 'Dijemput', 'updated_at' => now()]);
@@ -109,6 +120,7 @@ class StaffController extends Controller
 
         $oi = DB::table('orders as o')->join('users as u','u.id_cust','=','o.id_cust')
             ->select('o.kode_order','u.id_cust','u.nama_cust')->where('o.id_order',$idOrder)->first();
+        // Kirim notifikasi ke customer dan owner supaya mereka tahu order sedang dijemput
         if ($oi) {
             CG::sendNotification('customer',$oi->id_cust,'🚗 Laundry Sedang Dijemput!',
                 "Order {$oi->kode_order} sedang dijemput oleh staff kami.",route('customer.tracking'));
@@ -121,16 +133,21 @@ class StaffController extends Controller
 
     public function kelolaOrder(Request $request)
     {
+        // Halaman kelola order: menampilkan kategori berdasarkan kebutuhan tindakan staf
         $id      = $this->id();
         $orders  = $this->allActiveOrders();
+        // Kategori: perlu verifikasi berat
         $needWeight = $orders->filter(fn($o) => $o->status_order === 'Dijemput' && (!$o->total_harga || $o->total_harga == 0));
+        // Kategori: sudah dibayar dan masih dalam proses
         $paid       = $orders->filter(fn($o) => $o->status_bayar === 'Lunas' && in_array($o->status_order,['Dijemput','Dicuci','Disetrika','Dikirim']));
+        // Sisanya yang masih menunggu/berlangsung
         $waiting    = $orders->filter(fn($o) =>
             !$needWeight->pluck('id_order')->contains($o->id_order) &&
             !$paid->pluck('id_order')->contains($o->id_order) &&
             in_array($o->status_order,['Dijemput','Dicuci','Disetrika','Dikirim'])
         );
 
+        // Jika ada query id, ambil detail untuk panel kanan
         $selId    = (int)$request->query('id', 0);
         $selOrder = null;
         if ($selId) {
@@ -146,6 +163,7 @@ class StaffController extends Controller
                 ->where('o.id_order', $selId)->first();
         }
 
+        // Kembalikan view kelola_order dengan data katalog untuk opsi perubahan
         return view('staff.index', [
             'page'       => 'kelola_order',
             'staffName'  => $this->nama(),
@@ -162,7 +180,8 @@ class StaffController extends Controller
 
     public function setBerat(Request $request)
     {
-        // ✅ REVISI: Validasi server-side
+        // Set berat/qty dan hitung subtotal serta buat/ubah pembayaran
+        // Validasi server-side
         $request->validate([
             'id_order'    => ['required', 'integer', 'exists:orders,id_order'],
             'id_katalog'  => ['required', 'integer', 'exists:katalog,id_katalog'],
@@ -189,14 +208,17 @@ class StaffController extends Controller
         $qty       = $request->input('qty') ? (int)$request->input('qty') : null;
         $hargaSat  = (float)$request->input('harga_satuan');
         $satuan    = $request->input('satuan');
+        // Hitung subtotal: jika satuan kg gunakan berat, jika pcs gunakan qty
         $subtotal  = $satuan === 'kg' ? $berat * $hargaSat : ($qty ?? 0) * $hargaSat;
 
+        // Update multiple tables dalam transaksi: order_detail, orders, pembayaran, tracking
         DB::transaction(function () use ($idOrder, $id, $berat, $qty, $hargaSat, $subtotal, $satuan) {
             DB::table('order_detail')->where('id_order', $idOrder)
                 ->update(['berat' => $berat ?: null, 'qty' => $qty, 'harga_satuan' => $hargaSat, 'subtotal' => $subtotal]);
             DB::table('orders')->where('id_order', $idOrder)
                 ->update(['total_harga' => $subtotal, 'updated_at' => now()]);
 
+            // Jika sudah ada row pembayaran, update jumlah; jika belum, insert baru (metode default QRIS)
             $cek = DB::table('pembayaran')->where('id_order', $idOrder)->first();
             if ($cek) {
                 DB::table('pembayaran')->where('id_order', $idOrder)
@@ -205,12 +227,14 @@ class StaffController extends Controller
                 DB::table('pembayaran')->insert(['id_order' => $idOrder, 'metode' => 'QRIS', 'jumlah' => $subtotal, 'status_bayar' => 'Pending', 'created_at' => now()]);
             }
 
+            // Tambah tracking bahwa berat diverifikasi dan tagihan dikirim
             DB::table('tracking')->insert(['id_order' => $idOrder, 'status' => 'Dijemput',
                 'keterangan' => 'Berat diverifikasi, tagihan dikirim ke customer', 'updated_by' => $id, 'waktu_update' => now()]);
         });
 
         $oi = DB::table('orders as o')->join('users as u','u.id_cust','=','o.id_cust')
             ->select('o.kode_order','u.id_cust','u.nama_cust')->where('o.id_order',$idOrder)->first();
+        // Notifikasi customer dan owner tentang tagihan baru
         if ($oi) {
             CG::sendNotification('customer',$oi->id_cust,'💳 Tagihan Laundry Kamu Sudah Siap!',
                 "Order {$oi->kode_order} — Tagihan sebesar " . CG::rupiah($subtotal) . " sudah dimasukkan.",
@@ -225,6 +249,7 @@ class StaffController extends Controller
 
     public function statusLaundry(Request $request)
     {
+        // Halaman untuk melihat dan merubah status laundry
         $id     = $this->id();
         $orders = $this->allActiveOrders();
         $paid   = $orders->filter(fn($o) => $o->status_bayar === 'Lunas' && in_array($o->status_order,['Dijemput','Dicuci','Disetrika','Dikirim']));
@@ -242,6 +267,7 @@ class StaffController extends Controller
                 ->where('o.id_order',$selId)->first();
         }
 
+        // Pemetaan status selanjutnya untuk UI (button advance)
         $nextStatusMap = ['Dijemput'=>'Dicuci','Dicuci'=>'Disetrika','Disetrika'=>'Dikirim','Dikirim'=>'Selesai'];
 
         return view('staff.index', [
@@ -257,7 +283,8 @@ class StaffController extends Controller
 
     public function advanceStatus(Request $request)
     {
-        // ✅ REVISI: Validasi server-side
+        // Advance status: validasi, cek pembayaran lunas, update order & tracking
+        // Validasi server-side
         $request->validate([
             'id_order'   => ['required', 'integer', 'exists:orders,id_order'],
             'new_status' => ['required', 'in:Dicuci,Disetrika,Dikirim,Selesai,Dibatalkan'],
@@ -272,16 +299,19 @@ class StaffController extends Controller
         $idOrder   = (int)$request->input('id_order');
         $newStatus = $request->input('new_status');
 
+        // Cek pembayaran: hanya lanjutkan jika status pembayaran Lunas
         $bayar = DB::table('pembayaran')->where('id_order', $idOrder)->first();
         if (!$bayar || $bayar->status_bayar !== 'Lunas') {
             return redirect()->route('staff.status_laundry')->withErrors(['status' => 'Customer belum melunasi pembayaran!']);
         }
 
+        // Update order status dan masukkan row tracking dalam transaksi
         DB::transaction(function () use ($idOrder, $newStatus, $id) {
             DB::table('orders')->where('id_order', $idOrder)->update(['status_order' => $newStatus, 'updated_at' => now()]);
             DB::table('tracking')->insert(['id_order' => $idOrder, 'status' => $newStatus,
                 'keterangan' => 'Status diperbarui oleh staff', 'updated_by' => $id, 'waktu_update' => now()]);
 
+            // Jika status menjadi Selesai, generate invoice bila belum ada
             if ($newStatus === 'Selesai') {
                 $bayarRow = DB::table('pembayaran')->where('id_order', $idOrder)->where('status_bayar','Lunas')->first();
                 if ($bayarRow) {
@@ -299,6 +329,7 @@ class StaffController extends Controller
 
         $oi = DB::table('orders as o')->join('users as u','u.id_cust','=','o.id_cust')
             ->select('o.kode_order','u.id_cust')->where('o.id_order',$idOrder)->first();
+        // Beri notifikasi ke customer & owner sesuai status baru
         if ($oi) {
             $msg = match($newStatus) {
                 'Dicuci'    => "Order {$oi->kode_order} sedang dicuci. Proses laundry sedang berjalan!",
@@ -324,7 +355,7 @@ class StaffController extends Controller
             ->join('layanan as l','l.id_layanan','=','o.id_layanan')
             ->select('p.*','o.kode_order','u.nama_cust','l.nama_layanan')
             ->where('p.status_bayar','Menunggu Konfirmasi')->get();
-
+        // Kembalikan view konfirmasi bayar
         return view('staff.index', [
             'page'        => 'konfirmasi_bayar',
             'staffName'   => $this->nama(),
@@ -347,6 +378,7 @@ class StaffController extends Controller
         $id      = $this->id();
         $idBayar = (int)$request->input('id_bayar');
 
+        // Update pembayaran dalam transaksi
         DB::transaction(function () use ($idBayar, $id) {
             DB::table('pembayaran')->where('id_bayar', $idBayar)->update([
                 'status_bayar'      => 'Lunas',
@@ -359,6 +391,7 @@ class StaffController extends Controller
         $oi = DB::table('pembayaran as p')->join('orders as o','o.id_order','=','p.id_order')
             ->join('users as u','u.id_cust','=','o.id_cust')
             ->select('o.kode_order','u.id_cust')->where('p.id_bayar',$idBayar)->first();
+        // Notifikasi ke customer dan owner bahwa pembayaran telah dikonfirmasi
         if ($oi) {
             CG::sendNotification('customer',$oi->id_cust,'✅ Pembayaran Dikonfirmasi!',
                 "Pembayaran untuk order {$oi->kode_order} sudah dikonfirmasi.",route('customer.tracking'));

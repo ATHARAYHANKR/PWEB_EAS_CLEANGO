@@ -4,7 +4,7 @@
 @section('content')
 <div class="flex bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-3xl" style="min-height:520px">
 
-  {{-- Brand Panel --}}
+  {{-- Brand Panel: sisi kiri menampilkan informasi marketing dan brand CleanGo. --}}
   <div class="hidden md:flex flex-col justify-between w-64 shrink-0 p-10 text-white relative overflow-hidden bg-gradient-to-b from-blue-900 to-blue-500">
     <div class="absolute rounded-full bg-white opacity-5 w-48 h-48" style="top:-60px;right:-60px"></div>
     <div class="absolute rounded-full bg-white opacity-5 w-32 h-32" style="top:130px;left:-40px"></div>
@@ -49,7 +49,7 @@
       </div>
       @endforeach
 
-      @foreach([['password','Password','fa-lock','Minimal 6 karakter'],['confirm_password','Konfirmasi Password','fa-lock','Ulangi password']] as [$name,$label,$icon,$ph])
+      @foreach([['password','Password','fa-lock','Minimal 6 karakter'],['password_confirmation','Konfirmasi Password','fa-lock','Ulangi password']] as [$name,$label,$icon,$ph])
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">{{ $label }}</label>
         <div class="relative">
@@ -66,6 +66,7 @@
       </button>
     </form>
 
+    {{-- Link ke halaman login jika pengguna sudah memiliki akun. --}}
     <p class="text-center text-xs text-slate-400 mt-5">
       Sudah punya akun? <a href="{{ route('login') }}" class="text-blue-500 font-semibold hover:text-blue-700 hover:underline transition">Login di sini</a>
     </p>

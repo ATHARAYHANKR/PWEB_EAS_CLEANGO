@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+{{-- Template PDF untuk mencetak invoice/nota. Digunakan oleh controller PDF generator. --}}
 <head>
     <meta charset="UTF-8">
     <title>Nota {{ $invoice->no_invoice }}</title>

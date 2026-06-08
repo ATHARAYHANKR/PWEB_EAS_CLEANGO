@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    {{-- Halaman welcome default Laravel; kemungkinan tidak digunakan oleh alur aplikasi CleanGo.
+         Route utama sudah diarahkan ke halaman login custom di routes/web.php. --}}
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">

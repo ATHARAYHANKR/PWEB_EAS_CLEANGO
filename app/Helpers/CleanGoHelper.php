@@ -8,6 +8,7 @@ class CleanGoHelper
 {
     public static function rupiah($angka): string
     {
+        // Format angka ke format Rupiah lokal (tanpa desimal)
         return 'Rp ' . number_format((float)$angka, 0, ',', '.');
     }
 
@@ -32,6 +33,7 @@ class CleanGoHelper
 
     public static function generateKodeOrder(): string
     {
+        // Generate kode order unik per hari: ORD-YYYYMMDD-XXX
         $today = now()->format('Ymd');
         $count = DB::table('orders')->whereDate('tanggal_pesan', today())->count() + 1;
         return 'ORD-' . $today . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
@@ -39,6 +41,7 @@ class CleanGoHelper
 
     public static function generateNoInvoice(): string
     {
+        // Generate nomor invoice unik per hari: INV-YYYYMMDD-XXX
         $today = now()->format('Ymd');
         $count = DB::table('invoice')->whereDate('tgl_invoice', today())->count() + 1;
         return 'INV-' . $today . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
@@ -46,6 +49,7 @@ class CleanGoHelper
 
     public static function sendNotification(string $role, int $actorId, string $title, string $message, string $link = ''): void
     {
+        // Simpan notifikasi ke tabel notifications. Role menentukan penerima (owner/staff/customer)
         DB::table('notifications')->insert([
             'role'       => $role,
             'actor_id'   => $actorId,
@@ -66,6 +70,7 @@ class CleanGoHelper
 
     public static function notifyAllOwner(string $title, string $message, string $link = ''): void
     {
+        // Kirim notifikasi ke semua owner aktif yang terdaftar di tabel owner.
         $owners = DB::table('owner')->where('is_active', 1)->get();
         foreach ($owners as $o) {
             self::sendNotification('owner', $o->id_owner, $title, $message, $link);
@@ -74,6 +79,7 @@ class CleanGoHelper
 
     public static function countUnread(string $role, int $actorId): int
     {
+        // Hitung jumlah notifikasi belum dibaca untuk role+actor tertentu
         return DB::table('notifications')
             ->where('role', $role)
             ->where('actor_id', $actorId)
@@ -83,6 +89,7 @@ class CleanGoHelper
 
     public static function getNotifications(string $role, int $actorId, int $limit = 20): array
     {
+        // Ambil notifikasi terbaru untuk ditampilkan di UI (AJAX)
         return DB::table('notifications')
             ->where('role', $role)
             ->where('actor_id', $actorId)
@@ -94,6 +101,7 @@ class CleanGoHelper
 
     public static function markAllRead(string $role, int $actorId): void
     {
+        // Tandai semua notifikasi sebagai sudah dibaca
         DB::table('notifications')
             ->where('role', $role)
             ->where('actor_id', $actorId)

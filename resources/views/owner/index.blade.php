@@ -1,96 +1,140 @@
 @extends('layouts.app')
 
 @section('title', 'Owner - CleanGo')
-@section('sidebar-icon')<i class="fas fa-crown"></i>@endsection
-@section('sidebar-panel')Panel Owner@endsection
-
-@section('sidebar-nav')
-@php
-$menu = [
-  ['dashboard',    'fa-th-large',    'Dashboard'],
-  ['semua_order',  'fa-list-alt',    'Semua Order'],
-  ['katalog',      'fa-tag',         'Katalog Harga'],
-  ['layanan',      'fa-concierge-bell','Jenis Layanan'],
-  ['staff',        'fa-user-tie',    'Manajemen Staff'],
-  ['invoice',      'fa-file-invoice','Invoice'],
-  ['laporan',      'fa-chart-bar',   'Laporan'],
-];
-@endphp
-@foreach($menu as [$key,$icon,$label])
-<a href="{{ route('owner.'.$key) }}"
-   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition {{ $page === $key ? 'bg-white/20 text-white' : 'text-white/75 hover:bg-white/10 hover:text-white' }}">
-  <i class="fas {{ $icon }} w-4 text-center"></i> {{ $label }}
-</a>
-@endforeach
-@endsection
-
-@section('topbar-icon')<i class="fas fa-crown mr-2 text-violet-500"></i>@endsection
 @section('topbar-title')
   @php $titles = ['dashboard'=>'Dashboard Owner','semua_order'=>'Semua Order','katalog'=>'Katalog Harga','layanan'=>'Jenis Layanan','staff'=>'Manajemen Staff','invoice'=>'Invoice','laporan'=>'Laporan']; @endphp
   {{ $titles[$page] ?? 'Dashboard' }}
 @endsection
 
 @section('content')
+{{-- Halaman utama Owner: menampilkan metrics bisnis, manajemen order, katalog, layanan, staff, invoice, dan laporan. --}}
 
 {{-- ═══ DASHBOARD ═══ --}}
 @if($page === 'dashboard')
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-  @foreach([['📦','Total Order',$totalOrder,'slate'],['🔄','Aktif',$orderAktif,'blue'],['✅','Selesai',$orderSelesai,'emerald'],['💰','Total Omzet','Rp '.number_format($totalOmzet,0,',','.'),'violet']] as [$e,$l,$v,$c])
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
-    <div class="text-2xl">{{ $e }}</div>
-    <div><div class="text-[11px] text-slate-500">{{ $l }}</div><div class="text-lg font-bold text-{{ $c }}-600">{{ $v }}</div></div>
+{{-- ── STAT CARDS ── --}}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+  {{-- Total Order --}}
+  <div class="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Order</span>
+      <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 text-sm">
+        <i class="fas fa-box"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-slate-900 leading-none">{{ $totalOrder }}</div>
+    <div class="text-[11px] text-slate-400">Semua waktu</div>
   </div>
-  @endforeach
+  {{-- Aktif --}}
+  <div class="bg-white rounded-2xl border border-blue-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Aktif</span>
+      <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 text-sm">
+        <i class="fas fa-spinner"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-blue-600 leading-none">{{ $orderAktif }}</div>
+    <div class="text-[11px] text-slate-400">Sedang diproses</div>
+  </div>
+  {{-- Selesai --}}
+  <div class="bg-white rounded-2xl border border-emerald-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Selesai</span>
+      <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 text-sm">
+        <i class="fas fa-check-circle"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-emerald-600 leading-none">{{ $orderSelesai }}</div>
+    <div class="text-[11px] text-slate-400">Terselesaikan</div>
+  </div>
+  {{-- Omzet --}}
+  <div class="bg-indigo-600 rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-violet-200 uppercase tracking-wider">Total Omzet</span>
+      <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-sm">
+        <i class="fas fa-wallet"></i>
+      </div>
+    </div>
+    <div class="text-2xl font-extrabold text-white leading-none">Rp {{ number_format($totalOmzet,0,',','.') }}</div>
+    <div class="text-[11px] text-violet-300">Pendapatan keseluruhan</div>
+  </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-      <span class="font-semibold">Order Terbaru</span>
-      <a href="{{ route('owner.semua_order') }}" class="text-xs text-violet-600 hover:underline">Lihat semua</a>
-    </div>
-    @foreach($allOrders->take(8) as $o)
-    <div class="px-5 py-3 border-b border-slate-50 flex items-center justify-between hover:bg-slate-50 transition">
+{{-- ── TABLES ── --}}
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+  {{-- Order Terbaru --}}
+  <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
       <div>
-        <span class="font-mono text-xs font-bold">{{ $o->kode_order }}</span>
-        <span class="ml-1 text-xs text-slate-500">{{ $o->nama_cust }}</span>
+        <div class="text-sm font-bold text-slate-900">Order Terbaru</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">8 order paling baru</div>
       </div>
-      <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold
-        {{ $o->status_order === 'Selesai' ? 'bg-emerald-100 text-emerald-700' : ($o->status_order === 'Dibatalkan' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
-        {{ $o->status_order }}</span>
+      <a href="{{ route('owner.semua_order') }}" class="text-xs font-semibold text-indigo-600 hover:text-violet-800 flex items-center gap-1 transition">
+        Lihat semua <i class="fas fa-arrow-right text-[10px]"></i>
+      </a>
     </div>
-    @endforeach
+    <div class="divide-y divide-slate-50">
+      @foreach($allOrders->take(8) as $o)
+      <div class="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/70 transition">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center text-indigo-600 shrink-0">
+            <i class="fas fa-receipt text-xs"></i>
+          </div>
+          <div class="min-w-0">
+            <span class="font-mono text-xs font-bold text-slate-800">{{ $o->kode_order }}</span>
+            <div class="text-xs text-slate-400 truncate">{{ $o->nama_cust }}</div>
+          </div>
+        </div>
+        <span class="shrink-0 text-[10px] px-2.5 py-1 rounded-lg font-semibold
+          {{ $o->status_order === 'Selesai' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' :
+             ($o->status_order === 'Dibatalkan' ? 'bg-red-50 text-red-600 ring-1 ring-red-200' :
+             'bg-blue-50 text-blue-600 ring-1 ring-blue-200') }}">
+          {{ $o->status_order }}
+        </span>
+      </div>
+      @endforeach
+    </div>
   </div>
 
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-      <span class="font-semibold">Daftar Staff</span>
-      <a href="{{ route('owner.staff') }}" class="text-xs text-violet-600 hover:underline">Kelola</a>
-    </div>
-    @foreach($staffList as $s)
-    <div class="px-5 py-3 border-b border-slate-50 flex items-center gap-3 hover:bg-slate-50 transition">
-      <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-700">
-        {{ mb_strtoupper(mb_substr($s->nama, 0, 1)) }}
-      </div>
+  {{-- Daftar Staff --}}
+  <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
       <div>
-        <div class="text-sm font-semibold text-slate-800">{{ $s->nama }}</div>
-        <div class="text-xs text-slate-400">{{ $s->username }}</div>
+        <div class="text-sm font-bold text-slate-900">Tim Staff</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">{{ count($staffList) }} anggota terdaftar</div>
       </div>
-      <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold {{ $s->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">
-        {{ $s->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+      <a href="{{ route('owner.staff') }}" class="text-xs font-semibold text-indigo-600 hover:text-violet-800 flex items-center gap-1 transition">
+        Kelola <i class="fas fa-arrow-right text-[10px]"></i>
+      </a>
     </div>
-    @endforeach
+    <div class="divide-y divide-slate-50">
+      @foreach($staffList as $s)
+      <div class="px-5 py-3.5 flex items-center gap-3 hover:bg-slate-50/70 transition">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-sm font-extrabold text-white shrink-0">
+          {{ mb_strtoupper(mb_substr($s->nama, 0, 1)) }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-slate-800 truncate">{{ $s->nama }}</div>
+          <div class="text-[11px] text-slate-400">{{ $s->username }}</div>
+        </div>
+        <span class="shrink-0 w-1.5 h-1.5 rounded-full {{ $s->is_active ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+      </div>
+      @endforeach
+    </div>
   </div>
+
 </div>
 
 {{-- ═══ SEMUA ORDER ═══ --}}
+{{-- Halaman daftar semua order: filter berdasarkan status dan tampilan detail order.
+     Memungkinkan owner melihat ringkasan order lengkap dan membatalkan order. --}}
 @elseif($page === 'semua_order')
 <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
   <div class="lg:col-span-2">
     <div class="flex gap-2 mb-3 overflow-x-auto pb-1">
       @foreach([''=>'Semua','Menunggu Konfirmasi'=>'Menunggu','Dijemput'=>'Dijemput','Dicuci'=>'Dicuci','Selesai'=>'Selesai','Dibatalkan'=>'Dibatalkan'] as $sv => $sl)
       <a href="{{ route('owner.semua_order', ['status' => $sv]) }}"
-         class="whitespace-nowrap text-xs px-3 py-1.5 rounded-xl font-semibold border transition {{ $fStatus === $sv ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-500 border-slate-200 hover:border-violet-300' }}">
+         class="whitespace-nowrap text-xs px-3 py-1.5 rounded-xl font-semibold border transition {{ $fStatus === $sv ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300' }}">
         {{ $sl }}
       </a>
       @endforeach
@@ -99,7 +143,7 @@ $menu = [
     <div class="space-y-2 max-h-[70vh] overflow-y-auto">
       @foreach($allOrders->when($fStatus, fn($c) => $c->where('status_order', $fStatus)) as $o)
       <a href="{{ route('owner.semua_order', ['id' => $o->id_order, 'status' => $fStatus]) }}"
-         class="block bg-white border {{ $selId == $o->id_order ? 'border-violet-400 ring-2 ring-violet-100' : 'border-slate-100' }} rounded-2xl p-3 shadow-sm hover:border-violet-300 transition">
+         class="block bg-white border {{ $selId == $o->id_order ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-100' }} rounded-2xl p-3 shadow-sm hover:border-indigo-300 transition">
         <div class="flex items-center justify-between mb-0.5">
           <span class="font-mono text-xs font-bold">{{ $o->kode_order }}</span>
           <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold
@@ -107,7 +151,7 @@ $menu = [
             {{ $o->status_order }}</span>
         </div>
         <div class="text-xs text-slate-500">{{ $o->nama_cust }} • {{ $o->nama_layanan }}</div>
-        <div class="text-xs font-semibold text-violet-600 mt-0.5">{{ $o->jumlah_bayar ? 'Rp '.number_format($o->jumlah_bayar,0,',','.') : '-' }}</div>
+        <div class="text-xs font-semibold text-indigo-600 mt-0.5">{{ $o->jumlah_bayar ? 'Rp '.number_format($o->jumlah_bayar,0,',','.') : '-' }}</div>
       </a>
       @endforeach
     </div>
@@ -125,8 +169,8 @@ $menu = [
         <form method="POST" action="{{ route('owner.order.batalkan') }}">
           @csrf
           <input type="hidden" name="id_order" value="{{ $selOrder->id_order }}">
-          <button type="submit" data-confirm-title="Batalkan Order" data-confirm-message="Batalkan order ini?" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-semibold transition">
-            ❌ Batalkan
+          <button type="submit" data-confirm-title="Batalkan Order" data-confirm-message="Batalkan order ini?" class="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg font-semibold transition">
+            <i class="fas fa-ban text-[10px]"></i> Batalkan
           </button>
         </form>
         @endif
@@ -144,7 +188,7 @@ $menu = [
         <div class="absolute left-2 top-0 bottom-0 w-px bg-slate-200"></div>
         @foreach($selTracking as $t)
         <div class="relative mb-3 pl-4">
-          <div class="absolute -left-1 top-1 w-2.5 h-2.5 rounded-full {{ $loop->last ? 'bg-violet-500' : 'bg-slate-300' }} border-2 border-white"></div>
+          <div class="absolute -left-1 top-1 w-2.5 h-2.5 rounded-full {{ $loop->last ? 'bg-indigo-500' : 'bg-slate-300' }} border-2 border-white"></div>
           <div class="text-xs font-bold">{{ $t->status }}</div>
           <div class="text-xs text-slate-400">{{ $t->keterangan }}</div>
           <div class="text-[10px] text-slate-300">{{ \Carbon\Carbon::parse($t->waktu_update)->format('d M Y H:i') }}</div>
@@ -163,6 +207,8 @@ $menu = [
 </div>
 
 {{-- ═══ KATALOG ═══ --}}
+{{-- Halaman katalog dan pengaturan tampilan booking customer.
+     Owner dapat mengubah foto/teks antar jemput yang muncul pada halaman customer. --}}
 @elseif($page === 'katalog')
 
 {{-- ══ SETTING ANTAR JEMPUT ══ --}}
@@ -244,14 +290,14 @@ $menu = [
         <div class="flex items-center gap-2 flex-shrink-0">
           <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {{ $k->status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $k->status }}</span>
           {{-- Tombol Edit Foto --}}
-          <button onclick="openEditKatalog({{ $k->id_katalog }}, {{ $k->id_layanan }}, '{{ $k->varian }}', {{ $k->harga }}, '{{ $k->satuan }}', '{{ $k->deskripsi }}', '{{ $k->status }}', '{{ $k->foto ? Storage::url($k->foto) : '' }}')"
-            class="text-xs text-blue-400 hover:text-blue-600 transition px-1" title="Edit">
-            <i class="fas fa-edit"></i>
+          <button onclick="openEditKatalog({{ $k->id_katalog }}, {{ $k->id_layanan }}, {{ json_encode($k->varian) }}, {{ $k->harga }}, {{ json_encode($k->satuan) }}, {{ json_encode($k->deskripsi ?? '') }}, {{ json_encode($k->status) }}, {{ json_encode($k->foto ? Storage::url($k->foto) : '') }})"
+            class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg font-semibold transition" title="Edit">
+            <i class="fas fa-pen-to-square text-[10px]"></i> Edit
           </button>
           <form method="POST" action="{{ route('owner.katalog.delete', $k->id_katalog) }}" class="inline">
             @csrf @method('DELETE')
-            <button type="submit" data-confirm-title="Hapus Katalog" data-confirm-message="Apakah Anda yakin ingin menghapus katalog ini?" class="text-xs text-red-400 hover:text-red-600 transition px-1" title="Hapus">
-              <i class="fas fa-trash"></i>
+            <button type="submit" data-confirm-title="Hapus Katalog" data-confirm-message="Apakah Anda yakin ingin menghapus katalog ini?" class="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg font-semibold transition" title="Hapus">
+              <i class="fas fa-trash-alt text-[10px]"></i>
             </button>
           </form>
         </div>
@@ -274,7 +320,7 @@ $menu = [
           <img id="addPreviewImg" class="hidden w-full h-full object-cover" src="" alt="">
         </div>
         <label class="cursor-pointer block">
-          <div class="w-full py-2 border-2 border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-500 hover:border-violet-400 hover:text-violet-600 transition">
+          <div class="w-full py-2 border-2 border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition">
             <i class="fas fa-upload mr-1"></i> Pilih Foto
           </div>
           <input type="file" name="foto" accept="image/*" class="hidden" onchange="previewAdd(this)">
@@ -282,7 +328,7 @@ $menu = [
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Layanan</label>
-        <select name="id_layanan" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <select name="id_layanan" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
           <option value="">-- Pilih --</option>
           @foreach($layananList as $l)
           <option value="{{ $l->id_layanan }}">{{ $l->nama_layanan }}</option>
@@ -291,7 +337,7 @@ $menu = [
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Varian</label>
-        <select name="varian" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <select name="varian" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
           <option value="Regular">Regular</option>
           <option value="Express">Express</option>
           <option value="Hemat">Hemat</option>
@@ -299,25 +345,25 @@ $menu = [
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Harga</label>
-        <input type="number" name="harga" min="0" required placeholder="Contoh: 7000" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <input type="number" name="harga" min="0" required placeholder="Contoh: 7000" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Satuan</label>
-        <select name="satuan" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <select name="satuan" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
           <option value="kg">kg</option>
           <option value="pcs">pcs</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
-        <select name="status" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <select name="status" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
           <option value="Aktif">Aktif</option>
           <option value="Nonaktif">Nonaktif</option>
         </select>
       </div>
-      <input type="text" name="deskripsi" placeholder="Deskripsi (opsional)" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
-      <button type="submit" class="w-full py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">
-        <i class="fas fa-plus mr-2"></i>Tambah Katalog
+      <input type="text" name="deskripsi" placeholder="Deskripsi (opsional)" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+      <button type="submit" class="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-xl text-sm hover:bg-indigo-700 transition inline-flex items-center justify-center gap-2">
+        <i class="fas fa-plus text-[11px]"></i>Tambah Katalog
       </button>
     </form>
   </div>
@@ -339,7 +385,7 @@ $menu = [
           <img id="editPreviewImg" src="" alt="" class="w-full h-full object-cover">
         </div>
         <label class="cursor-pointer block">
-          <div class="w-full py-2 border-2 border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-500 hover:border-violet-400 hover:text-violet-600 transition">
+          <div class="w-full py-2 border-2 border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition">
             <i class="fas fa-upload mr-1"></i> Ganti Foto
           </div>
           <input type="file" name="foto" accept="image/*" class="hidden" onchange="previewImgEl(this, document.getElementById('editPreviewImg'))">
@@ -347,7 +393,7 @@ $menu = [
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Layanan</label>
-        <select name="id_layanan" id="editLayanan" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <select name="id_layanan" id="editLayanan" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
           @foreach($layananList as $l)
           <option value="{{ $l->id_layanan }}">{{ $l->nama_layanan }}</option>
           @endforeach
@@ -385,7 +431,7 @@ $menu = [
       </div>
       <div class="flex gap-3 pt-2">
         <button type="button" onclick="closeEditModal()" class="flex-1 py-2 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 transition">Batal</button>
-        <button type="submit" class="flex-1 py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">Simpan</button>
+        <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white font-semibold rounded-xl text-sm hover:bg-indigo-700 transition inline-flex items-center justify-center gap-2"><i class="fas fa-save text-[11px]"></i>Simpan</button>
       </div>
     </form>
   </div>
@@ -427,24 +473,68 @@ function previewAdd(input) {
     reader.readAsDataURL(input.files[0]);
   }
 }
+var ownerKatalogUpdateBaseUrl = '{{ url('/owner/katalog') }}';
+var ownerLayananUpdateBaseUrl = '{{ url('/owner/layanan') }}';
+
 function openEditKatalog(id, idLayanan, varian, harga, satuan, deskripsi, status, fotoUrl) {
   var form = document.getElementById('editForm');
-  form.action = '/owner/katalog/' + id;
-  document.getElementById('editLayanan').value  = idLayanan;
-  document.getElementById('editVarian').value   = varian;
-  document.getElementById('editHarga').value    = harga;
-  document.getElementById('editSatuan').value   = satuan;
-  document.getElementById('editDeskripsi').value= deskripsi;
-  document.getElementById('editStatus').value   = status;
+  if (!form) return;
+  form.action = ownerKatalogUpdateBaseUrl + '/' + id;
+  var layananEl = document.getElementById('editLayanan');
+  var varianEl = document.getElementById('editVarian');
+  var hargaEl = document.getElementById('editHarga');
+  var satuanEl = document.getElementById('editSatuan');
+  var deskripsiEl = document.getElementById('editDeskripsi');
+  var statusEl = document.getElementById('editStatus');
+  if (layananEl) layananEl.value = idLayanan;
+  if (varianEl) varianEl.value = varian;
+  if (hargaEl) hargaEl.value = harga;
+  if (satuanEl) satuanEl.value = satuan;
+  if (deskripsiEl) deskripsiEl.value = deskripsi;
+  if (statusEl) statusEl.value = status;
   var img = document.getElementById('editPreviewImg');
-  img.src = fotoUrl || '';
-  img.style.display = fotoUrl ? 'block' : 'none';
-  document.getElementById('editModal').classList.remove('hidden');
+  if (img) {
+    img.src = fotoUrl || '';
+    img.style.display = fotoUrl ? 'block' : 'none';
+  }
+  var editModal = document.getElementById('editModal');
+  if (editModal) editModal.classList.remove('hidden');
 }
-function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
-document.getElementById('editModal').addEventListener('click', function(e) {
-  if (e.target === this) closeEditModal();
-});
+function closeEditModal() {
+  var editModal = document.getElementById('editModal');
+  if (editModal) editModal.classList.add('hidden');
+}
+var editModalElement = document.getElementById('editModal');
+if (editModalElement) {
+  editModalElement.addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
+}
+
+function openEditLayanan(id, nama, deskripsi, isActive) {
+  var form = document.getElementById('editLayananForm');
+  if (!form) {
+    console.error('editLayananForm not found');
+    return;
+  }
+  form.action = ownerLayananUpdateBaseUrl + '/' + id;
+  var namaEl = document.getElementById('editLayananNama');
+  var deskripsiEl = document.getElementById('editLayananDeskripsi');
+  var statusEl = document.getElementById('editLayananStatus');
+  if (namaEl) namaEl.value = nama || '';
+  if (deskripsiEl) deskripsiEl.value = deskripsi || '';
+  if (statusEl) statusEl.value = isActive ? '1' : '0';
+  var layananEditModal = document.getElementById('layananEditModal');
+  if (layananEditModal) {
+    layananEditModal.classList.remove('hidden');
+  } else {
+    console.error('layananEditModal not found');
+  }
+}
+function closeEditLayananModal() {
+  var layananEditModal = document.getElementById('layananEditModal');
+  if (layananEditModal) layananEditModal.classList.add('hidden');
+}
 </script>
 @endpush
 
@@ -461,10 +551,17 @@ document.getElementById('editModal').addEventListener('click', function(e) {
       </div>
       <div class="flex items-center gap-2">
         <span class="inline-flex items-center h-7 px-2 rounded-full text-[10px] font-semibold {{ $l->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $l->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+        <button type="button" class="edit-layanan-btn inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg font-semibold transition" title="Edit layanan"
+          data-layanan-id="{{ $l->id_layanan }}"
+          data-layanan-nama="{{ $l->nama_layanan }}"
+          data-layanan-deskripsi="{{ $l->deskripsi }}"
+          data-layanan-status="{{ $l->is_active ? 1 : 0 }}">
+          <i class="fas fa-pen-to-square text-[10px]"></i> Edit
+        </button>
         <form method="POST" action="{{ route('owner.layanan.delete', $l->id_layanan) }}">
           @csrf @method('DELETE')
-          <button type="submit" data-confirm-title="Hapus Layanan" data-confirm-message="Untuk menghapus layanan ini, hapus dahulu semua katalog yang terkait dengan layanan tersebut." class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 text-red-400 hover:text-red-600 hover:border-red-200 transition" title="Hapus layanan">
-            <i class="fas fa-trash"></i>
+          <button type="submit" data-confirm-title="Hapus Layanan" data-confirm-message="Untuk menghapus layanan ini, hapus dahulu semua katalog yang terkait dengan layanan tersebut." class="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg font-semibold transition" title="Hapus layanan">
+            <i class="fas fa-trash-alt text-[10px]"></i> Hapus
           </button>
         </form>
       </div>
@@ -478,17 +575,125 @@ document.getElementById('editModal').addEventListener('click', function(e) {
     <h3 class="font-bold text-slate-800 mb-4">+ Tambah Layanan</h3>
     <form method="POST" action="{{ route('owner.layanan.store') }}" class="space-y-3">
       @csrf
-      <input type="text" name="nama_layanan" required placeholder="Nama layanan" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
-      <textarea name="deskripsi" rows="2" placeholder="Deskripsi (opsional)" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"></textarea>
-      <button type="submit" class="w-full py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">
-        <i class="fas fa-plus mr-2"></i>Tambah Layanan
+      <input type="text" name="nama_layanan" required placeholder="Nama layanan" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+      <textarea name="deskripsi" rows="2" placeholder="Deskripsi (opsional)" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"></textarea>
+      <button type="submit" class="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-xl text-sm hover:bg-indigo-700 transition inline-flex items-center justify-center gap-2">
+        <i class="fas fa-plus text-[11px]"></i>Tambah Layanan
       </button>
     </form>
   </div>
 </div>
 
+<div id="layananEditModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+  <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Edit Jenis Layanan</h3>
+        <p class="text-sm text-slate-500">Perbarui nama, deskripsi, atau status layanan.</p>
+      </div>
+      <button type="button" onclick="closeEditLayananModal()" class="text-slate-400 hover:text-slate-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="px-6 py-5">
+      <form id="editLayananForm" method="POST" action="" class="space-y-4">
+        @csrf
+        @method('PUT')
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2">Nama Layanan</label>
+          <input type="text" name="nama_layanan" id="editLayananNama" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2">Deskripsi</label>
+          <textarea name="deskripsi" id="editLayananDeskripsi" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2">Status</label>
+          <select name="status" id="editLayananStatus" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+            <option value="1">Aktif</option>
+            <option value="0">Nonaktif</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-3 mt-2">
+          <button type="button" onclick="closeEditLayananModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Batal</button>
+          <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition font-semibold"><i class="fas fa-save text-[11px]"></i>Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+@push('scripts')
+<script>
+// JS helpers untuk halaman owner: edit layanan dan inisialisasi modal.
+// Fungsi-fungsi ini tidak mempengaruhi server-side, hanya membuka/tutup modal dan
+// menyetel input saat pengguna menekan tombol edit layanan.
+function openEditLayanan(id, nama, deskripsi, isActive) {
+  var form = document.getElementById('editLayananForm');
+  if (!form) {
+    console.error('editLayananForm not found');
+    return;
+  }
+  var ownerLayananUpdateBaseUrl = '{{ url('/owner/layanan') }}';
+  form.action = ownerLayananUpdateBaseUrl + '/' + id;
+  var namaEl = document.getElementById('editLayananNama');
+  var deskripsiEl = document.getElementById('editLayananDeskripsi');
+  var statusEl = document.getElementById('editLayananStatus');
+  if (namaEl) namaEl.value = nama || '';
+  if (deskripsiEl) deskripsiEl.value = deskripsi || '';
+  if (statusEl) statusEl.value = isActive ? '1' : '0';
+  var layananEditModal = document.getElementById('layananEditModal');
+  if (layananEditModal) {
+    layananEditModal.classList.remove('hidden');
+  } else {
+    console.error('layananEditModal not found');
+  }
+}
+
+function closeEditLayananModal() {
+  var layananEditModal = document.getElementById('layananEditModal');
+  if (layananEditModal) layananEditModal.classList.add('hidden');
+}
+
+// Tunggu hingga DOM siap sebelum menambahkan event listeners
+function initLayananEditHandlers() {
+  var layananEditModalElement = document.getElementById('layananEditModal');
+  if (layananEditModalElement) {
+    layananEditModalElement.addEventListener('click', function(e) {
+      if (e.target === this) closeEditLayananModal();
+    });
+  }
+
+  var layananEditButtons = document.querySelectorAll('.edit-layanan-btn');
+  if (layananEditButtons.length) {
+    layananEditButtons.forEach(function(button) {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        openEditLayanan(
+          this.dataset.layananId,
+          this.dataset.layananNama,
+          this.dataset.layananDeskripsi,
+          Number(this.dataset.layananStatus)
+        );
+      });
+    });
+  } else {
+    console.warn('Tidak ada button dengan class edit-layanan-btn');
+  }
+}
+
+// Jalankan ketika DOM siap
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLayananEditHandlers);
+} else {
+  initLayananEditHandlers();
+}
+</script>
+@endpush
+
 {{-- ═══ STAFF ═══ --}}
 @elseif($page === 'staff')
+{{-- Halaman manajemen staff owner: daftar staff, form tambah staff, edit, dan hapus. --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
     <div class="px-5 py-4 border-b border-slate-100"><span class="font-semibold">Daftar Staff ({{ $staffList->count() }})</span></div>
@@ -504,13 +709,13 @@ document.getElementById('editModal').addEventListener('click', function(e) {
         </div>
         <span class="inline-flex items-center h-7 px-2 rounded-full text-[10px] font-semibold {{ $s->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $s->is_active ? 'Aktif' : 'Nonaktif' }}</span>
         <div class="flex items-center gap-1">
-          <a href="{{ route('owner.staff.edit', $s->id_staff) }}" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 text-blue-500 hover:text-blue-700 hover:border-blue-200 transition" title="Edit staff">
-            <i class="fas fa-edit"></i>
+          <a href="{{ route('owner.staff.edit', $s->id_staff) }}" class="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg font-semibold transition" title="Edit staff">
+            <i class="fas fa-pen-to-square text-[10px]"></i> Edit
           </a>
           <form method="POST" action="{{ route('owner.staff.delete', $s->id_staff) }}" class="inline">
             @csrf @method('DELETE')
-            <button type="submit" data-confirm-title="Hapus Staff" data-confirm-message="Apakah Anda yakin ingin menghapus staff ini?" class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 text-red-500 hover:text-red-700 hover:border-red-200 transition" title="Hapus staff">
-              <i class="fas fa-trash"></i>
+            <button type="submit" data-confirm-title="Hapus Staff" data-confirm-message="Apakah Anda yakin ingin menghapus staff ini?" class="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg font-semibold transition" title="Hapus staff">
+              <i class="fas fa-trash-alt text-[10px]"></i> Hapus
             </button>
           </form>
         </div>
@@ -528,17 +733,19 @@ document.getElementById('editModal').addEventListener('click', function(e) {
       @foreach([['nama','Nama Lengkap','text'],['username','Username','text'],['notelp','No. Telepon','tel'],['sandi','Password','password'],['alamat','Alamat','text']] as [$n,$l,$t])
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $l }}</label>
-        <input type="{{ $t }}" name="{{ $n }}" placeholder="{{ $l }}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <input type="{{ $t }}" name="{{ $n }}" placeholder="{{ $l }}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
       </div>
       @endforeach
-      <button type="submit" class="w-full py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">
-        <i class="fas fa-user-plus mr-2"></i>Tambah Staff
+      <button type="submit" class="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-xl text-sm hover:bg-indigo-700 transition inline-flex items-center justify-center gap-2">
+        <i class="fas fa-user-plus text-[11px]"></i>Tambah Staff
       </button>
     </form>
   </div>
 </div>
 
 {{-- ═══ STAFF EDIT ═══ --}}
+{{-- Halaman edit data staff. Owner dapat memperbarui nama, kontak, alamat,
+     password baru, dan status aktif/nonaktif. --}}
 @elseif($page === 'staff_edit')
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
@@ -547,7 +754,7 @@ document.getElementById('editModal').addEventListener('click', function(e) {
         <h3 class="font-bold text-slate-800">Ubah Staff</h3>
         <p class="text-sm text-slate-500">Perbarui data staff dan password jika diperlukan.</p>
       </div>
-      <a href="{{ route('owner.staff') }}" class="text-xs text-violet-600 hover:underline">Kembali ke daftar</a>
+      <a href="{{ route('owner.staff') }}" class="text-xs text-indigo-600 hover:underline">Kembali ke daftar</a>
     </div>
 
     <form method="POST" action="{{ route('owner.staff.update', $staff->id_staff) }}" class="space-y-4">
@@ -555,26 +762,26 @@ document.getElementById('editModal').addEventListener('click', function(e) {
       @foreach([['nama','Nama Lengkap','text'],['username','Username','text'],['notelp','No. Telepon','tel'],['alamat','Alamat','text']] as [$n,$l,$t])
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">{{ $l }}</label>
-        <input type="{{ $t }}" name="{{ $n }}" value="{{ old($n, $staff->{$n}) }}" placeholder="{{ $l }}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <input type="{{ $t }}" name="{{ $n }}" value="{{ old($n, $staff->{$n}) }}" placeholder="{{ $l }}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
       </div>
       @endforeach
 
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Password Baru (opsional)</label>
-        <input type="password" name="sandi" placeholder="Kosongkan jika tidak ingin mengubah" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <input type="password" name="sandi" placeholder="Kosongkan jika tidak ingin mengubah" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
       </div>
 
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
-        <select name="is_active" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+        <select name="is_active" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
           <option value="1" {{ $staff->is_active ? 'selected' : '' }}>Aktif</option>
           <option value="0" {{ !$staff->is_active ? 'selected' : '' }}>Nonaktif</option>
         </select>
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3">
-        <button type="submit" class="w-full sm:w-auto px-5 py-2 bg-violet-600 text-white font-semibold rounded-xl text-sm hover:bg-violet-700 transition">
-          <i class="fas fa-save mr-2"></i>Update Staff
+        <button type="submit" class="inline-flex items-center gap-2 w-full sm:w-auto px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl text-sm hover:bg-indigo-700 transition">
+          <i class="fas fa-save text-[11px]"></i>Update Staff
         </button>
         <a href="{{ route('owner.staff') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">Batal</a>
       </div>
@@ -583,6 +790,7 @@ document.getElementById('editModal').addEventListener('click', function(e) {
 </div>
 
 {{-- ═══ INVOICE ═══ --}}
+{{-- Halaman invoice owner: tampilkan semua invoice, status pembayaran, dan cetak PDF. --}}
 @elseif($page === 'invoice')
 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
   <div class="px-5 py-4 border-b border-slate-100"><span class="font-semibold">Semua Invoice ({{ $invoices->count() }})</span></div>
@@ -601,8 +809,8 @@ document.getElementById('editModal').addEventListener('click', function(e) {
       <div class="flex items-center justify-end gap-2">
         <div class="font-bold text-emerald-600">Rp {{ number_format($inv->jumlah,0,',','.') }}</div>
         <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">Lunas</span>
-        <a href="{{ route('owner.invoice.print', $inv->id_invoice) }}" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition">
-          <i class="fas fa-print"></i> Cetak
+        <a href="{{ route('owner.invoice.print', $inv->id_invoice) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition">
+          <i class="fas fa-print text-[10px]"></i> Cetak
         </a>
       </div>
       <div class="text-xs text-slate-400">{{ $inv->metode }}</div>
@@ -614,6 +822,7 @@ document.getElementById('editModal').addEventListener('click', function(e) {
 </div>
 
 {{-- ═══ LAPORAN ═══ --}}
+{{-- Halaman laporan Owner: ringkasan omzet/order, grafik Chart.js, dan ekspor PDF/Excel. --}}
 @elseif($page === 'laporan')
 
 {{-- Data untuk Chart.js --}}
@@ -631,7 +840,7 @@ document.getElementById('editModal').addEventListener('click', function(e) {
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
     <p class="text-xs text-slate-500 font-medium mb-1">Total Omzet (12 Bln)</p>
-    <p class="text-2xl font-bold text-violet-600">Rp {{ number_format($totalOmzet,0,',','.') }}</p>
+    <p class="text-2xl font-bold text-indigo-600">Rp {{ number_format($totalOmzet,0,',','.') }}</p>
   </div>
   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
     <p class="text-xs text-slate-500 font-medium mb-1">Total Order</p>
@@ -652,11 +861,11 @@ document.getElementById('editModal').addEventListener('click', function(e) {
       <h3 class="font-bold text-slate-800 text-sm">📊 Omzet per Bulan</h3>
       <div class="flex gap-2">
         <a href="{{ route('owner.laporan.pdf') }}" target="_blank"
-           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 text-xs font-semibold transition-colors">
           <i class="fas fa-file-pdf text-xs"></i> PDF
         </a>
         <a href="{{ route('owner.laporan.excel') }}"
-           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold transition-colors">
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition-colors">
           <i class="fas fa-file-excel text-xs"></i> Excel
         </a>
       </div>
@@ -700,7 +909,7 @@ document.getElementById('editModal').addEventListener('click', function(e) {
               {{ $row->selesai }}
             </span>
           </td>
-          <td class="py-2.5 text-right font-bold text-violet-600">Rp {{ number_format($row->total_omzet,0,',','.') }}</td>
+          <td class="py-2.5 text-right font-bold text-indigo-600">Rp {{ number_format($row->total_omzet,0,',','.') }}</td>
         </tr>
         @endforeach
       </tbody>
@@ -736,8 +945,8 @@ document.addEventListener('DOMContentLoaded', function() {
         datasets: [{
           label: 'Omzet (Rp)',
           data: omzet,
-          backgroundColor: 'rgba(139, 92, 246, 0.8)',
-          borderColor: 'rgba(139, 92, 246, 1)',
+          backgroundColor: 'rgba(99, 102, 241, 0.85)',
+          borderColor: 'rgba(99, 102, 241, 1)',
           borderWidth: 1,
           borderRadius: 6,
         }]

@@ -4,7 +4,7 @@
 @section('content')
 <div class="flex bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-3xl" style="min-height:480px">
 
-  {{-- Brand Panel --}}
+  {{-- Brand Panel: tampilan informasi aplikasi dan identitas CleanGo di sisi kiri. --}}
   <div class="hidden md:flex flex-col justify-between w-64 shrink-0 p-10 text-white relative overflow-hidden bg-gradient-to-b from-blue-900 to-blue-500">
     <div class="absolute rounded-full bg-white opacity-5 w-48 h-48" style="top:-60px;right:-60px"></div>
     <div class="absolute rounded-full bg-white opacity-5 w-32 h-32" style="top:130px;left:-40px"></div>
@@ -77,6 +77,7 @@
   </div>
 </div>
 
+{{-- Script kecil untuk toggle password visibility pada form login. --}}
 <script>
 function togglePwd(){
   var i=document.getElementById('pwd'),e=document.getElementById('eyeIco');

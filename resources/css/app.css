@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Laundry theme overrides for violet utilities */
+.text-violet-50 { color: #eff6ff !important; }
+.text-violet-200 { color: #7dd3fc !important; }
+.text-violet-300 { color: #38bdf8 !important; }
+.text-violet-400 { color: #0ea5e9 !important; }
+.text-violet-500 { color: #0ea5e9 !important; }
+.text-violet-600 { color: #0284c7 !important; }
+.text-violet-700 { color: #0369a1 !important; }
+.text-violet-800 { color: #075985 !important; }
+.text-violet-900 { color: #0c4a6e !important; }
+.hover\:text-violet-600:hover { color: #0284c7 !important; }
+.hover\:text-violet-700:hover { color: #0369a1 !important; }
+.hover\:text-violet-800:hover { color: #075985 !important; }
+.bg-violet-50 { background-color: #eff6ff !important; }
+.bg-violet-600 { background-color: #0284c7 !important; }
+.bg-violet-700 { background-color: #0369a1 !important; }
+.bg-violet-500\/15 { background-color: rgba(14,165,233,.15) !important; }
+.hover\:bg-violet-700:hover { background-color: #0369a1 !important; }
+.border-violet-400 { border-color: #38bdf8 !important; }
+.hover\:border-violet-300:hover { border-color: #7dd3fc !important; }
+.hover\:border-violet-400:hover { border-color: #38bdf8 !important; }
+.ring-violet-100 { --tw-ring-color: #e0f2fe !important; }
+.ring-violet-500\/40 { --tw-ring-color: rgba(14,165,233,.4) !important; }

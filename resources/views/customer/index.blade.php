@@ -2,104 +2,147 @@
 
 @section('title', 'Customer - CleanGo')
 
-@section('sidebar-icon')<i class="fas fa-tshirt"></i>@endsection
-@section('sidebar-panel')Panel Customer@endsection
-
-@section('sidebar-nav')
-@php
-$menu = [
-  ['dashboard',       'fa-th-large',     'Dashboard'],
-  ['booking',         'fa-plus-circle',  'Booking Baru'],
-  ['riwayat',         'fa-history',      'Riwayat Order'],
-  ['pembayaran',      'fa-credit-card',  'Pembayaran'],
-  ['tracking',        'fa-map-marker-alt','Tracking'],
-  ['invoice',         'fa-file-invoice', 'Invoice'],
-  ['profil',          'fa-user-circle',  'Profil Saya'],
-];
-@endphp
-@foreach($menu as [$key,$icon,$label])
-<a href="{{ route('customer.' . $key) }}"
-   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition {{ $page === $key ? 'bg-white/20 text-white' : 'text-white/75 hover:bg-white/10 hover:text-white' }}">
-  <i class="fas {{ $icon }} w-4 text-center"></i> {{ $label }}
-  @if($key === 'pembayaran' && isset($ordersBayar) && $ordersBayar->count())
-    <span class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">{{ $ordersBayar->count() }}</span>
-  @endif
-</a>
-@endforeach
-@endsection
-
-@section('topbar-icon')<i class="fas fa-tshirt mr-2 text-blue-500"></i>@endsection
 @section('topbar-title')
   @php $titles = ['dashboard'=>'Dashboard','booking'=>'Booking Baru','riwayat'=>'Riwayat Order','pembayaran'=>'Pembayaran','tracking'=>'Tracking Order','invoice'=>'Invoice','profil'=>'Profil Saya']; @endphp
   {{ $titles[$page] ?? 'Dashboard' }}
 @endsection
 
 @section('content')
+{{--
+  Konten utama berdasarkan halaman: setiap blok di bawah ini menampilkan
+  fitur yang berbeda (dashboard, booking, riwayat, dll).
+  Penjelasan tiap baris/sektion fokus pada: fitur, validasi input,
+  penggunaan session untuk menyimpan state sementara (mis. last_order_id),
+  dan penggunaan cookie untuk persistensi klien ringan (mis. last_order).
+  Keterkaitan: controllers memproses form -> menyimpan ke DB -> set session/cookie
+  lalu views menampilkan data dari controller (variabel yang diteruskan oleh controller).
 
+  BAGIAN: Dashboard — menampilkan ringkasan statistik dan notifikasi singkat
+  Sumber data: variabel yang diset oleh controller (mis. $statAktif, $statSelesai, $statTotal)
+--}}
 {{-- ═══════════════ DASHBOARD ═══════════════ --}}
 @if($page === 'dashboard')
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-  @foreach([['📦','Order Aktif',$statAktif,'blue'],['✅','Selesai',$statSelesai,'emerald'],['💰','Total Bayar','Rp '.number_format($statTotal,0,',','.'),'violet']] as [$emoji,$label,$val,$color])
-  <div class="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-    <div class="text-3xl">{{ $emoji }}</div>
-    <div>
-      <div class="text-xs text-slate-500 font-medium mb-1">{{ $label }}</div>
-      <div class="text-xl font-bold text-{{ $color }}-600">{{ $val }}</div>
+{{-- STAT CARDS: tiga kartu ringkasan (Order Aktif, Selesai, Total Bayar)
+     Catatan: data harus diambil/diolah di controller, view hanya menampilkan. --}}
+{{-- ── STAT CARDS ── --}}
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
+  <div class="bg-white rounded-2xl border border-blue-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Order Aktif</span>
+      <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 text-sm">
+        <i class="fas fa-box-open"></i>
+      </div>
     </div>
+    <div class="text-3xl font-extrabold text-blue-600 leading-none">{{ $statAktif }}</div>
+    <div class="text-[11px] text-slate-400">Sedang diproses</div>
   </div>
-  @endforeach
+  <div class="bg-white rounded-2xl border border-emerald-200/60 p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Selesai</span>
+      <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 text-sm">
+        <i class="fas fa-check-circle"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-emerald-600 leading-none">{{ $statSelesai }}</div>
+    <div class="text-[11px] text-slate-400">Order selesai</div>
+  </div>
+  <div class="bg-blue-700 rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-blue-200 uppercase tracking-wider">Total Bayar</span>
+      <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-sm">
+        <i class="fas fa-wallet"></i>
+      </div>
+    </div>
+    <div class="text-2xl font-extrabold text-white leading-none">Rp {{ number_format($statTotal,0,',','.') }}</div>
+    <div class="text-[11px] text-blue-200">Total transaksi</div>
+  </div>
 </div>
 
+{{-- PENDING PAYMENT ALERT: tampilkan jika ada order menunggu pembayaran
+     Data: $ordersBayar (koleksi) dari controller. Tindakan "Bayar Sekarang" memicu controller pembayaran. --}}
+{{-- ── PENDING PAYMENT ALERT ── --}}
 @if($ordersBayar->count())
-<div class="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-  <p class="text-sm font-bold text-amber-800 mb-3"><i class="fas fa-bell mr-2"></i>Pembayaran Menunggu</p>
-  @foreach($ordersBayar as $o)
-  <div class="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-amber-100 mb-2">
-    <div>
-      <div class="text-sm font-bold">{{ $o->kode_order }}</div>
-      <div class="text-xs text-slate-500">{{ $o->nama_layanan }} • Rp {{ number_format($o->jumlah_bayar,0,',','.') }}</div>
+<div class="mb-5 bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
+  <div class="px-5 py-3.5 border-b border-amber-100 flex items-center gap-2">
+    <div class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-xs">
+      <i class="fas fa-bell"></i>
     </div>
-    <a href="{{ route('customer.pembayaran', ['id' => $o->id_order]) }}"
-       class="text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-amber-600 transition">Bayar</a>
+    <span class="text-sm font-bold text-amber-800">Pembayaran Menunggu</span>
+    <span class="ml-auto text-xs bg-amber-500 text-white font-bold rounded-full px-2 py-0.5">{{ $ordersBayar->count() }}</span>
   </div>
-  @endforeach
+  <div class="p-3 flex flex-col gap-2">
+    @foreach($ordersBayar as $o)
+    <div class="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-amber-100/80 shadow-sm">
+      <div>
+        <div class="font-mono text-sm font-bold text-slate-800">{{ $o->kode_order }}</div>
+        <div class="text-xs text-slate-500 mt-0.5">{{ $o->nama_layanan }} • <span class="font-semibold text-amber-600">Rp {{ number_format($o->jumlah_bayar,0,',','.') }}</span></div>
+      </div>
+      <a href="{{ route('customer.pembayaran', ['id' => $o->id_order]) }}"
+         class="inline-flex items-center gap-1.5 text-xs bg-amber-500 text-white px-3.5 py-2 rounded-lg font-bold hover:bg-amber-600 transition">
+        <i class="fas fa-credit-card text-[10px]"></i> Bayar Sekarang
+      </a>
+    </div>
+    @endforeach
+  </div>
 </div>
 @endif
 
-<div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+{{-- ORDER TABLE: menampilkan 5 order terbaru pengguna.
+     Data: $myOrders yang disiapkan oleh controller; status dan pembayaran di-render berdasarkan properti model. --}}
+{{-- ── ORDER TABLE ── --}}
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
   <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-    <span class="font-semibold text-slate-800">Order Terbaru</span>
-    <a href="{{ route('customer.riwayat') }}" class="text-xs text-blue-600 hover:underline">Lihat semua</a>
+    <div>
+      <div class="text-sm font-bold text-slate-900">Order Terbaru</div>
+      <div class="text-[11px] text-slate-400 mt-0.5">5 order terkini Anda</div>
+    </div>
+    <a href="{{ route('customer.riwayat') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition">
+      Lihat semua <i class="fas fa-arrow-right text-[10px]"></i>
+    </a>
   </div>
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
-      <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
-        <tr>
-          @foreach(['Kode','Layanan','Jadwal Jemput','Status','Bayar',''] as $h)
-          <th class="px-4 py-3 text-left">{{ $h }}</th>
+      <thead>
+        <tr class="bg-slate-50/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          @foreach(['Kode','Layanan','Jadwal Jemput','Status','Pembayaran',''] as $h)
+          <th class="px-5 py-3 text-left font-semibold">{{ $h }}</th>
           @endforeach
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
         @forelse($myOrders->take(5) as $o)
-        <tr class="hover:bg-slate-50 transition">
-          <td class="px-4 py-3 font-mono text-xs font-bold">{{ $o->kode_order }}</td>
-          <td class="px-4 py-3">{{ $o->nama_layanan }}</td>
-          <td class="px-4 py-3 text-xs">{{ $o->jadwal_jemput ? \Carbon\Carbon::parse($o->jadwal_jemput)->format('d M Y H:i') : '-' }}</td>
-          <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full font-semibold
-            {{ in_array($o->status_order,['Selesai']) ? 'bg-emerald-100 text-emerald-700' : (in_array($o->status_order,['Dibatalkan']) ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
-            {{ $o->status_order }}</span></td>
-          <td class="px-4 py-3 text-xs">
-            @if($o->status_bayar === 'Lunas') <span class="text-emerald-600 font-semibold">Lunas</span>
-            @elseif($o->status_bayar === 'Pending' && $o->jumlah_bayar > 0) <span class="text-amber-600 font-semibold">Belum Bayar</span>
-            @else <span class="text-slate-400">-</span> @endif
+        <tr class="hover:bg-slate-50/60 transition">
+          <td class="px-5 py-3.5 font-mono text-xs font-bold text-slate-800">{{ $o->kode_order }}</td>
+          <td class="px-5 py-3.5 text-sm text-slate-700">{{ $o->nama_layanan }}</td>
+          <td class="px-5 py-3.5 text-xs text-slate-500">{{ $o->jadwal_jemput ? \Carbon\Carbon::parse($o->jadwal_jemput)->format('d M Y H:i') : '—' }}</td>
+          <td class="px-5 py-3.5">
+            <span class="text-[10px] px-2.5 py-1 rounded-lg font-semibold
+              {{ in_array($o->status_order,['Selesai']) ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' :
+                 (in_array($o->status_order,['Dibatalkan']) ? 'bg-red-50 text-red-600 ring-1 ring-red-200' :
+                 'bg-blue-50 text-blue-600 ring-1 ring-blue-200') }}">
+              {{ $o->status_order }}
+            </span>
           </td>
-          <td class="px-4 py-3">
-            <a href="{{ route('customer.riwayat', ['id' => $o->id_order]) }}" class="text-xs text-blue-600 hover:underline">Detail</a>
+          <td class="px-5 py-3.5 text-xs">
+            @if($o->status_bayar === 'Lunas')
+              <span class="text-emerald-600 font-semibold flex items-center gap-1"><i class="fas fa-check text-[9px]"></i> Lunas</span>
+            @elseif($o->status_bayar === 'Pending' && $o->jumlah_bayar > 0)
+              <span class="text-amber-600 font-semibold">Belum Bayar</span>
+            @else
+              <span class="text-slate-400">—</span>
+            @endif
+          </td>
+          <td class="px-5 py-3.5">
+            <a href="{{ route('customer.riwayat', ['id' => $o->id_order]) }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition">Detail →</a>
           </td>
         </tr>
         @empty
-        <tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada order. <a href="{{ route('customer.booking') }}" class="text-blue-600">Buat booking pertama!</a></td></tr>
+        <tr>
+          <td colspan="6" class="px-5 py-12 text-center">
+            <div class="text-slate-400 text-sm">Belum ada order.</div>
+            <a href="{{ route('customer.booking') }}" class="text-blue-600 text-sm font-semibold hover:underline mt-1 inline-block">Buat booking pertama →</a>
+          </td>
+        </tr>
         @endforelse
       </tbody>
     </table>
@@ -108,6 +151,11 @@ $menu = [
 
 {{-- ═══════════════ BOOKING ═══════════════ --}}
 @elseif($page === 'booking')
+
+{{--
+  BAGIAN: Booking — menampilkan katalog layanan dan form booking.
+  Alur: user pilih paket -> JS mengisi form -> submit ke controller -> controller validasi & simpan order -> set session/cookie.
+--}}
 
 {{-- ══ SECTION: DAFTAR HARGA KATALOG ══ --}}
 <div class="mb-10">
@@ -121,6 +169,7 @@ $menu = [
     <h3 class="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-tag text-blue-400 text-xs"></i> {{ $namaLayanan }}</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       @foreach($items as $k)
+      {{-- KARTU KATALOG: ini interaktif di client — atribut data-* dipakai JS untuk mengisi form --}}
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer katalog-card"
            data-id-katalog="{{ $k->id_katalog }}"
            data-id-layanan="{{ $k->id_layanan }}"
@@ -156,7 +205,7 @@ $menu = [
             @endif
           </div>
           <button type="button"
-            class="mt-auto w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm rounded-xl transition"
+            class="mt-auto w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold text-sm rounded-xl transition inline-flex items-center justify-center gap-2"
             onclick="pilihKatalog({{ $k->id_katalog }}, {{ $k->id_layanan }})">
             <i class="fas fa-plus-circle mr-1.5"></i>Pesan Sekarang
           </button>
@@ -170,6 +219,10 @@ $menu = [
   <p class="text-xs text-slate-400 mt-2">**Gratis antar jemput berlaku sesuai syarat & ketentuan</p>
 </div>
 
+{{--
+  BAGIAN: Info Antar Jemput — isi diambil dari pengaturan aplikasi ($settings)
+  Tidak ada validasi di sisi view; controller/provider menyiapkan data ini.
+--}}
 {{-- ══ SECTION: INFO ANTAR JEMPUT ══ --}}
 @php
   $ajFoto  = $settings['antar_jemput_foto']  ?? null;
@@ -187,7 +240,7 @@ $menu = [
         @endforeach
       </div>
       <div>
-        <span class="inline-block bg-emerald-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+        <span class="inline-flex items-center gap-2 bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl border border-emerald-500">
           <i class="fas fa-motorcycle mr-2"></i>S&K Antar Jemput
         </span>
       </div>
@@ -204,10 +257,15 @@ $menu = [
   </div>
 </div>
 
+{{--
+  BAGIAN: Form Booking — form POST yang dikirim ke route `customer.booking.store`.
+  Server-side validation wajib dilakukan di controller (mis. id_katalog required, tanggal >= today, dsb.).
+--}}
 {{-- ══ SECTION: FORM BOOKING ══ --}}
 <div class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8" id="formBooking">
   <h3 class="text-lg font-bold text-slate-800 mb-5"><i class="fas fa-plus-circle text-blue-500 mr-2"></i>Form Booking Laundry</h3>
 
+  {{-- Validasi form (server): jika controller mengembalikan error pada kunci 'booking', tampilkan di sini. --}}
   @if($errors->has('booking'))
   <div class="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">{{ $errors->first('booking') }}</div>
   @endif
@@ -222,6 +280,7 @@ $menu = [
 
     <div>
       <label class="block text-xs font-semibold text-slate-500 mb-1.5">Jenis Layanan</label>
+      {{-- Field `id_layanan`: wajib. onchange memanggil `filterKatalog()` untuk menampilkan paket yang relevan. --}}
       <select name="id_layanan" id="layananSel" onchange="filterKatalog()" required
         class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">
         <option value="">-- Pilih Layanan --</option>
@@ -233,6 +292,7 @@ $menu = [
 
     <div>
       <label class="block text-xs font-semibold text-slate-500 mb-1.5">Paket / Varian</label>
+      {{-- Field `id_katalog`: wajib. Berisi paket/varian terpilih; controller akan memvalidasinya. --}}
       <select name="id_katalog" id="katalogSel" required
         class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">
         <option value="">-- Pilih Paket --</option>
@@ -246,6 +306,7 @@ $menu = [
 
     <div>
       <label class="block text-xs font-semibold text-slate-500 mb-1.5">Alamat Penjemputan</label>
+      {{-- Field `alamat`: wajib, default diisi dari profil user jika tersedia. --}}
       <textarea name="alamat" rows="2" placeholder="Alamat lengkap untuk dijemput" required
         class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">{{ $profil->alamat_cust ?? '' }}</textarea>
     </div>
@@ -253,6 +314,7 @@ $menu = [
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1.5">Tanggal Jemput</label>
+        {{-- Field `tanggal_jemput`: client-side minimal hari ini; server harus ulang validasi. --}}
         <input type="date" name="tanggal_jemput" required min="{{ date('Y-m-d') }}"
           class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">
       </div>
@@ -274,7 +336,9 @@ $menu = [
         class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">
     </div>
 
-    <button type="submit" data-confirm-title="Kirim Booking" data-confirm-message="Pastikan semua data booking sudah benar sebelum dikirim." class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold rounded-xl text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+    {{-- Tombol submit: kirim data ke server. Controller bertanggung jawab menyimpan order,
+        men-commit transaksi DB, menyimpan session last_order_id, dan meng-queue cookie last_order bila perlu. --}}
+    <button type="submit" data-confirm-title="Kirim Booking" data-confirm-message="Pastikan semua data booking sudah benar sebelum dikirim." class="w-full py-3 bg-blue-700 text-white font-semibold rounded-xl text-sm hover:bg-blue-800 transition inline-flex items-center justify-center gap-2">
       <i class="fas fa-paper-plane mr-2"></i>Kirim Booking
     </button>
   </form>
@@ -282,6 +346,7 @@ $menu = [
 
 @push('scripts')
 <script>
+// JS: fungsi bantu di client untuk memfilter opsi paket berdasarkan layanan terpilih
 function filterKatalog() {
   var sel = document.getElementById('layananSel').value;
   var opts = document.getElementById('katalogSel').options;
@@ -292,7 +357,7 @@ function filterKatalog() {
 }
 
 function pilihKatalog(idKatalog, idLayanan) {
-  // Set layanan
+  // Set layanan di form dan pilih paket yang sesuai — UX client-side saja
   var layananSel = document.getElementById('layananSel');
   layananSel.value = idLayanan;
   filterKatalog();
@@ -318,6 +383,11 @@ function pilihKatalog(idKatalog, idLayanan) {
 </script>
 @endpush
 
+{{--
+  BAGIAN: Edit Booking — mirip form booking, tapi prefilled dengan data order yang diedit.
+  Controller harus memastikan user berhak mengedit order ini dan melakukan validasi
+  yang sama seperti pada saat membuat order.
+--}}
 {{-- ═══════════════ EDIT BOOKING ═══════════════ --}}
 @elseif($page === 'booking_edit')
 <div class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">

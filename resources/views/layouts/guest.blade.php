@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        /* Layout guest page: tampilan login/register dengan background full-screen */
         body {
             min-height: 100vh;
             display: flex;

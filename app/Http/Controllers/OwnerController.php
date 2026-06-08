@@ -20,11 +20,14 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class OwnerController extends Controller
 {
+    // Ambil user id (owner) dari session
     private function id()   { return Session::get('user_id'); }
+    // Ambil nama owner dari session
     private function nama() { return Session::get('nama'); }
 
     private function allOrders()
     {
+        // Helper: query semua order untuk view owner
         return DB::table('orders as o')
             ->join('layanan as l', 'l.id_layanan', '=', 'o.id_layanan')
             ->join('users as u', 'u.id_cust', '=', 'o.id_cust')
@@ -38,11 +41,13 @@ class OwnerController extends Controller
     /** Helper: ambil semua settings sebagai key=>value */
     private function settings()
     {
+        // Mengambil app settings yang disimpan di DB sebagai key=>value
         return DB::table('app_settings')->pluck('value', 'key')->toArray();
     }
 
     public function dashboard()
     {
+        // Dashboard owner: ringkasan order, omzet, dll.
         $id     = $this->id();
         $orders = $this->allOrders();
         $staffList = DB::table('staff')->orderBy('nama')->get();
@@ -62,6 +67,7 @@ class OwnerController extends Controller
 
     public function semuaOrder(Request $request)
     {
+        // Halaman semua order: mendukung filtering dan peninjauan detail serta tracking order
         $id      = $this->id();
         $orders  = $this->allOrders();
         $fStatus = $request->query('status', '');
@@ -69,6 +75,7 @@ class OwnerController extends Controller
         $selOrder = $selTracking = null;
 
         if ($selId) {
+            // Ambil detail order jika id order dipilih dari UI
             $selOrder = DB::table('orders as o')
                 ->join('layanan as l','l.id_layanan','=','o.id_layanan')
                 ->join('users as u','u.id_cust','=','o.id_cust')
@@ -81,6 +88,7 @@ class OwnerController extends Controller
                          'k.varian','k.satuan','p.jumlah as jumlah_bayar','p.status_bayar','p.metode')
                 ->where('o.id_order', $selId)->first();
             if ($selOrder) {
+                // Ambil history tracking untuk order yang dipilih
                 $selTracking = DB::table('tracking')->where('id_order',$selId)->orderBy('waktu_update')->get();
             }
         }
@@ -99,6 +107,7 @@ class OwnerController extends Controller
 
     public function batalkanOrder(Request $request)
     {
+        // Cancel order oleh owner: update status order dan tulis history tracking
         $id      = $this->id();
         $idOrder = (int)$request->input('id_order', 0);
 
@@ -107,9 +116,11 @@ class OwnerController extends Controller
             DB::table('tracking')->insert(['id_order' => $idOrder, 'status' => 'Dibatalkan', 'keterangan' => 'Dibatalkan oleh owner', 'waktu_update' => now()]);
         });
 
+        // Ambil info customer untuk notifikasi
         $oi = DB::table('orders as o')->join('users as u','u.id_cust','=','o.id_cust')
             ->select('o.kode_order','u.id_cust')->where('o.id_order',$idOrder)->first();
         if ($oi) {
+            // Beri tahu customer dan staff bahwa order dibatalkan
             CG::sendNotification('customer',$oi->id_cust,'❌ Order Dibatalkan',
                 "Order {$oi->kode_order} dibatalkan oleh pengelola.",route('customer.riwayat'));
             CG::notifyAllStaff('❌ Order Dibatalkan',"Owner membatalkan order {$oi->kode_order}.",route('staff.order_masuk'));
@@ -123,7 +134,7 @@ class OwnerController extends Controller
         return view('owner.index', [
             'page'        => 'katalog',
             'ownerName'   => $this->nama(),
-            // ambil katalog lalu hapus entri duplikat berdasarkan layanan+varian+harga
+            // Ambil semua katalog aktif termasuk nama layanan, lalu buang duplikat dengan kombinasi layanan|varian|harga
             'katalogList' => DB::table('katalog as k')->join('layanan as l','l.id_layanan','=','k.id_layanan')
                 ->select('k.*','l.nama_layanan')->orderBy('l.id_layanan')->orderBy('k.varian')->get()
                 ->unique(fn($it) => ($it->id_layanan ?? '') . '|' . ($it->varian ?? '') . '|' . ($it->harga ?? ''))
@@ -136,6 +147,7 @@ class OwnerController extends Controller
 
     public function storeKatalog(Request $request)
     {
+        // Validasi input katalog termasuk file image yang di-upload
         $data = $request->validate([
             'foto' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
             'id_layanan' => ['required', 'integer', 'exists:layanan,id_layanan'],
@@ -146,6 +158,7 @@ class OwnerController extends Controller
             'status' => ['required', 'in:Aktif,Nonaktif'],
         ]);
 
+        // Upload foto ke disk publik dan simpan path file ke DB
         $fotoPath = $request->file('foto')->store('katalog', 'public');
 
         Katalog::create([
@@ -164,6 +177,7 @@ class OwnerController extends Controller
 
     public function updateKatalog(Request $request, $id)
     {
+        // Validasi update katalog; foto adalah opsional saat edit
         $data = $request->validate([
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
             'id_layanan' => ['required', 'integer', 'exists:layanan,id_layanan'],
@@ -184,6 +198,7 @@ class OwnerController extends Controller
             'updated_at' => now(),
         ];
 
+        // Jika foto baru di-upload, hapus file lama untuk menghindari file orphan
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
             $old = Katalog::where('id_katalog', $id)->value('foto');
             if ($old && Storage::disk('public')->exists($old)) {
@@ -198,9 +213,19 @@ class OwnerController extends Controller
 
     public function deleteKatalog($id)
     {
+        // Cek apakah katalog masih terkait dengan order
+        $orderCount = DB::table('order_detail')->where('id_katalog', $id)->count();
+        if ($orderCount > 0) {
+            return redirect()->route('owner.katalog')->withErrors([
+                'status' => 'Katalog ini tidak bisa dihapus karena sudah digunakan di order. Hapus order yang terkait terlebih dahulu.',
+            ]);
+        }
+
+        // Hapus file foto lama jika ada
         $old = Katalog::where('id_katalog', $id)->value('foto');
         if ($old) Storage::disk('public')->delete($old);
 
+        // Hapus entri katalog dari database
         Katalog::where('id_katalog', $id)->delete();
         return redirect()->route('owner.katalog')->with('flash', 'Katalog dihapus.');
     }
@@ -208,6 +233,7 @@ class OwnerController extends Controller
     /** Upload foto antar jemput & update teks settings */
     public function updateSettings(Request $request)
     {
+        // Jika ada file foto antar jemput, simpan file baru dan hapus file lama
         if ($request->hasFile('antar_jemput_foto') && $request->file('antar_jemput_foto')->isValid()) {
             $old = AppSetting::where('key', 'antar_jemput_foto')->value('value');
             if ($old) Storage::disk('public')->delete($old);
@@ -216,6 +242,7 @@ class OwnerController extends Controller
             AppSetting::where('key', 'antar_jemput_foto')->update(['value' => $path]);
         }
 
+        // Update nilai teks setting jika field diisi
         foreach (['antar_jemput_judul', 'antar_jemput_desc'] as $key) {
             if ($request->filled($key)) {
                 AppSetting::where('key', $key)->update(['value' => $request->input($key)]);
@@ -238,6 +265,7 @@ class OwnerController extends Controller
 
     public function storeLayanan(Request $request)
     {
+        // Validasi dan simpan layanan baru
         $request->validate([
             'nama_layanan' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
@@ -254,12 +282,14 @@ class OwnerController extends Controller
 
     public function updateLayanan(Request $request, $id)
     {
+        // Validasi data update layanan
         $request->validate([
             'nama_layanan' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'status' => ['required', 'in:0,1'],
         ]);
 
+        // Update record layanan berdasarkan id
         Layanan::where('id_layanan', $id)->update([
             'nama_layanan' => $request->input('nama_layanan'),
             'deskripsi' => $request->input('deskripsi'),
@@ -271,6 +301,7 @@ class OwnerController extends Controller
 
     public function deleteLayanan($id)
     {
+        // Pastikan layanan tidak memiliki katalog terkait sebelum dihapus
         $katalogCount = DB::table('katalog')->where('id_layanan', $id)->count();
         if ($katalogCount > 0) {
             return redirect()->route('owner.layanan')->withErrors([
@@ -295,6 +326,7 @@ class OwnerController extends Controller
 
     public function storeStaff(Request $request)
     {
+        // Validasi input staff baru
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
             'username' => ['required', 'string', 'max:50', Rule::unique('staff', 'username')],
@@ -305,6 +337,7 @@ class OwnerController extends Controller
             'notelp.digits_between' => 'No. Telepon harus berisi angka antara 6 sampai 20 digit.',
         ]);
 
+        // Simpan staff baru dengan password terenkripsi
         Staff::create([
             'nama' => trim($data['nama']),
             'username' => trim($data['username']),
@@ -319,6 +352,7 @@ class OwnerController extends Controller
 
     public function editStaff($id)
     {
+        // Ambil data staff untuk diedit. Jika tidak ditemukan, kembali ke daftar staff.
         $staff = DB::table('staff')->where('id_staff', $id)->first();
         if (!$staff) return redirect()->route('owner.staff')->with('flash', 'Staff tidak ditemukan.');
 
@@ -332,6 +366,7 @@ class OwnerController extends Controller
 
     public function updateStaff(Request $request, $id)
     {
+        // Validasi update data staff dan username unik kecuali untuk current id
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
             'username' => ['required', 'string', 'max:50', Rule::unique('staff', 'username')->ignore($id, 'id_staff')],
@@ -351,6 +386,7 @@ class OwnerController extends Controller
             'updated_at' => now(),
         ];
 
+        // Jika password baru diisi, enkripsi dan masukkan ke update array
         if ($request->filled('sandi')) {
             $request->validate(['sandi' => 'string|min:6'], ['sandi.min' => 'Password minimal 6 karakter.']);
             $update['sandi'] = Hash::make($request->input('sandi'));
@@ -370,6 +406,7 @@ class OwnerController extends Controller
     public function invoice()
     {
         $id = $this->id();
+        // Ambil daftar invoice terbaru dengan informasi order dan customer
         $invoices = DB::table('invoice as i')
             ->join('pembayaran as p','p.id_bayar','=','i.id_bayar')
             ->join('orders as o','o.id_order','=','p.id_order')
@@ -387,6 +424,7 @@ class OwnerController extends Controller
 
     public function printInvoice($id)
     {
+        // Ambil satu invoice lengkap untuk preview cetak
         $invoice = DB::table('invoice as i')
             ->join('pembayaran as p', 'p.id_bayar', '=', 'i.id_bayar')
             ->join('orders as o', 'o.id_order', '=', 'p.id_order')
@@ -410,6 +448,7 @@ class OwnerController extends Controller
             ->where('i.id_invoice', $id)
             ->first();
 
+        // Jika invoice tidak ditemukan, tampilkan 404
         if (!$invoice) {
             abort(404);
         }
@@ -423,6 +462,7 @@ class OwnerController extends Controller
 
     public function downloadInvoice($id)
     {
+        // Ambil invoice dan data order untuk generate PDF nota
         $invoice = DB::table('invoice as i')
             ->join('pembayaran as p', 'p.id_bayar', '=', 'i.id_bayar')
             ->join('orders as o', 'o.id_order', '=', 'p.id_order')
@@ -448,6 +488,7 @@ class OwnerController extends Controller
             abort(404);
         }
 
+        // Ambil detail order untuk dimasukkan ke PDF
         $details = DB::table('order_detail as od')
             ->leftJoin('katalog as k', 'k.id_katalog', '=', 'od.id_katalog')
             ->select('od.berat', 'od.qty', 'od.harga_satuan', 'od.subtotal', 'k.varian', 'k.satuan')
@@ -464,8 +505,13 @@ class OwnerController extends Controller
     public function laporan()
     {
         $id = $this->id();
-        $laporan = DB::table('orders')
-            ->selectRaw("DATE_FORMAT(tanggal_pesan,'%Y-%m') as bulan, COUNT(*) as total_order, SUM(total_harga) as total_omzet, SUM(CASE WHEN status_order='Selesai' THEN 1 ELSE 0 END) as selesai")
+        // Hitung laporan per bulan, jumlah order, omzet lunas, dan order selesai
+        $laporan = DB::table('orders as o')
+            ->leftJoin('pembayaran as p', function($join) {
+                $join->on('p.id_order', '=', 'o.id_order')
+                     ->where('p.status_bayar', '=', 'Lunas');
+            })
+            ->selectRaw("DATE_FORMAT(o.tanggal_pesan,'%Y-%m') as bulan, COUNT(*) as total_order, COALESCE(SUM(p.jumlah),0) as total_omzet, SUM(CASE WHEN o.status_order='Selesai' THEN 1 ELSE 0 END) as selesai")
             ->groupBy('bulan')->orderByDesc('bulan')->limit(12)->get();
 
         return view('owner.index', [
@@ -482,8 +528,12 @@ class OwnerController extends Controller
      */
     public function laporanPdf()
     {
-        $laporan = DB::table('orders')
-            ->selectRaw("DATE_FORMAT(tanggal_pesan,'%Y-%m') as bulan, COUNT(*) as total_order, SUM(total_harga) as total_omzet, SUM(CASE WHEN status_order='Selesai' THEN 1 ELSE 0 END) as selesai")
+        $laporan = DB::table('orders as o')
+            ->leftJoin('pembayaran as p', function($join) {
+                $join->on('p.id_order', '=', 'o.id_order')
+                     ->where('p.status_bayar', '=', 'Lunas');
+            })
+            ->selectRaw("DATE_FORMAT(o.tanggal_pesan,'%Y-%m') as bulan, COUNT(*) as total_order, COALESCE(SUM(p.jumlah),0) as total_omzet, SUM(CASE WHEN o.status_order='Selesai' THEN 1 ELSE 0 END) as selesai")
             ->groupBy('bulan')->orderByDesc('bulan')->limit(12)->get();
 
         $pdf = Pdf::loadView('owner.pdf.laporan', [

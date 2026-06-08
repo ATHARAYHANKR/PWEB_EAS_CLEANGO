@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+{{-- Halaman export untuk print invoice. Menampilkan tombol download PDF dan kembali. --}}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

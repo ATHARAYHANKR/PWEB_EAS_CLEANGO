@@ -27,14 +27,18 @@ class LaporanExport implements FromCollection, WithHeadings, WithTitle, WithStyl
 
     public function collection()
     {
-        $query = DB::table('orders')
+        $query = DB::table('orders as o')
+            ->leftJoin('pembayaran as p', function($join) {
+                $join->on('p.id_order', '=', 'o.id_order')
+                     ->where('p.status_bayar', '=', 'Lunas');
+            })
             ->selectRaw("
-                DATE_FORMAT(tanggal_pesan,'%Y-%m') as Bulan,
+                DATE_FORMAT(o.tanggal_pesan,'%Y-%m') as Bulan,
                 COUNT(*) as Total_Order,
-                SUM(CASE WHEN status_order='Selesai' THEN 1 ELSE 0 END) as Order_Selesai,
-                SUM(CASE WHEN status_order NOT IN ('Selesai','Dibatalkan') THEN 1 ELSE 0 END) as Order_Proses,
-                SUM(CASE WHEN status_order='Dibatalkan' THEN 1 ELSE 0 END) as Order_Batal,
-                SUM(total_harga) as Total_Omzet
+                SUM(CASE WHEN o.status_order='Selesai' THEN 1 ELSE 0 END) as Order_Selesai,
+                SUM(CASE WHEN o.status_order NOT IN ('Selesai','Dibatalkan') THEN 1 ELSE 0 END) as Order_Proses,
+                SUM(CASE WHEN o.status_order='Dibatalkan' THEN 1 ELSE 0 END) as Order_Batal,
+                COALESCE(SUM(p.jumlah),0) as Total_Omzet
             ")
             ->groupBy('Bulan')
             ->orderByDesc('Bulan');

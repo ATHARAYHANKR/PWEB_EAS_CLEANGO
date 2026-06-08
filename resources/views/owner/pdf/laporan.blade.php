@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+{{-- Template laporan PDF bulanan untuk owner. Ditujukan ke generator PDF dan email/print. --}}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

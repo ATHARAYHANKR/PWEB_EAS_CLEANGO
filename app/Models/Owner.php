@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Owner extends Model
 {
+    // Model untuk pemilik/administrator aplikasi.
+    // Owner biasanya mengelola setting, laporan, katalog, dan staff.
     protected $table = 'owner';
     protected $primaryKey = 'id_owner';
     protected $fillable = [
