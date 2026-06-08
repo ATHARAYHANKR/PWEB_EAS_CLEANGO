@@ -29,9 +29,32 @@
     <h2 class="text-2xl font-bold text-slate-800 mb-1">Buat Akun Baru</h2>
     <p class="text-slate-400 text-sm mb-6">Isi data diri kamu untuk mendaftar sebagai customer.</p>
 
-    @if($errors->has('register'))
-    <div class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">
-      <i class="fas fa-exclamation-circle"></i> {{ $errors->first('register') }}
+    @if($errors->any())
+    <div id="registerValidationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 p-4">
+      <div class="w-full max-w-xl bg-white rounded-[28px] shadow-2xl border border-slate-200 overflow-hidden">
+        <div class="flex items-start justify-between px-6 py-5 border-b border-slate-200">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-900">Validasi Gagal</h3>
+            <p class="text-sm text-slate-500">Silakan perbaiki kesalahan berikut sebelum mendaftar.</p>
+          </div>
+          <button type="button" onclick="closeRegisterModal()" class="text-slate-400 hover:text-slate-700 transition">
+            <i class="fas fa-times text-base"></i>
+          </button>
+        </div>
+        <div class="px-6 py-4 space-y-3">
+          @foreach($errors->all() as $error)
+          <div class="rounded-2xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm flex items-start gap-2">
+            <i class="fas fa-exclamation-circle mt-1"></i>
+            <div>{{ $error }}</div>
+          </div>
+          @endforeach
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 text-right">
+          <button type="button" onclick="closeRegisterModal()" class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            Tutup
+          </button>
+        </div>
+      </div>
     </div>
     @endif
 
@@ -72,4 +95,28 @@
     </p>
   </div>
 </div>
+
+<script>
+function showRegisterModal() {
+  var modal = document.getElementById('registerValidationModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+function closeRegisterModal() {
+  var modal = document.getElementById('registerValidationModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+  if (document.getElementById('registerValidationModal')) {
+    showRegisterModal();
+  }
+});
+</script>
 @endsection

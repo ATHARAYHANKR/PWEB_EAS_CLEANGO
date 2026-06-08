@@ -103,15 +103,33 @@ class LoginController extends Controller
     public function register(Request $request)
     {
         // Validasi input registrasi customer
+        $messages = [
+            'required' => 'Kolom :attribute wajib diisi.',
+            'string' => 'Kolom :attribute harus berupa teks.',
+            'max' => 'Kolom :attribute tidak boleh lebih dari :max karakter.',
+            'min' => 'Kolom :attribute harus minimal :min karakter.',
+            'digits_between' => 'Kolom :attribute harus berisi antara :min sampai :max angka.',
+            'confirmed' => 'Password dan konfirmasi password tidak sama.',
+            'alpha_num' => 'Username hanya boleh berisi huruf dan angka.',
+            'unique' => 'Kolom :attribute sudah digunakan.',
+        ];
+
+        $attributes = [
+            'nama' => 'nama lengkap',
+            'username' => 'username',
+            'notelp' => 'nomor telepon',
+            'alamat' => 'alamat',
+            'password' => 'password',
+            'password_confirmation' => 'konfirmasi password',
+        ];
+
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
             'username' => ['required', 'string', 'max:50', 'alpha_num', Rule::unique('users', 'username')],
             'notelp' => ['required', 'digits_between:6,20'],
             'alamat' => ['nullable', 'string', 'max:1000'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
-        ], [
-            'username.alpha_num' => 'Username hanya boleh huruf dan angka.',
-        ]);
+        ], $messages, $attributes);
 
         // Simpan user baru ke tabel users
         User::create([
